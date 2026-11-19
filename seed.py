@@ -74,9 +74,6 @@ def run(reset=False, demo=True):
         for u in users:
             if u != uid["demo"] and rnd.random() < 0.75:
                 c.execute("INSERT OR IGNORE INTO debate_votes VALUES(?,?,?,?,?)", (u, deb, rnd.choice(["aff", "opp"]), int(rnd.random() < 0.25), last))
-    for a, body, h in [("marcus_bell", "Helpful that both sides cite the Confession and the Fathers. The definitions in the discussion thread cleared up a lot for me.", 20),
-                       ("eleanor_vance", "The Frankfurt and agent-causation exchange is the heart of it. Appreciate that both sides acknowledge where their view is hard.", 10)]:
-        c.execute("INSERT INTO comments(target_type,target_id,parent_id,author_id,body,created_at) VALUES('debate',?,NULL,?,?,?)", (bid[0], uid[a], body, ago(h)))
     aids = []
     for i, (typ, cat, title, author, label, tags, mins, summ, body) in enumerate(ARTICLES):
         cur = c.execute("INSERT INTO articles(title,type,category,author,summary,body,label,tags,read_minutes,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
@@ -108,5 +105,14 @@ def run(reset=False, demo=True):
     c.commit(); c.close()
     print("Seeded: users", len(USERS), "discussions", len(DISCUSSIONS), "debates", len(DEBATES), "articles", len(ARTICLES))
 
+def clear_debates():
+    """Remove every debate, argument, vote, debate comment and debate bookmark (keeps users and everything else)."""
+    c = db.connect()
+    for sql in ("DELETE FROM debate_votes", "DELETE FROM debate_entries", "DELETE FROM comments WHERE target_type='debate'",
+                "DELETE FROM bookmarks WHERE kind='debate'", "DELETE FROM debates"):
+        c.execute(sql)
+    c.commit(); c.close(); print("All debates removed.")
+
 if __name__ == "__main__":
+    if "--clear-debates" in sys.argv: raise SystemExit(clear_debates())
     run("--reset" in sys.argv, demo="--no-demo" not in sys.argv)

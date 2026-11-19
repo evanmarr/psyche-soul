@@ -7,10 +7,10 @@ page("/debates", async () => {
   return { title: "Debates", html: html`
   <div class="page-head"><div><h1>Debates</h1><p class="lede">Structured, charitable argument. Each debate lays out two positions with opening arguments, rebuttals, Scripture and scholarly references.</p></div>
     <a class="btn primary" href="#/debates/new" data-need-login>${icon("plus")} Propose a debate</a></div>
-  <div class="cards two">${d.items.map(x => html`<a class="card debate-card" href="#/debates/${x.id}">
+  ${d.items.length ? html`<div class="cards two">${d.items.map(x => html`<a class="card debate-card" href="#/debates/${x.id}">
       <span class="eyebrow">${x.cname}</span><h3>${x.title}</h3><p class="dq">${x.question}</p>
       <div class="sides"><span class="side aff">${x.aff_label}</span><span class="vs">vs</span><span class="side opp">${x.opp_label}</span></div>
-      <div class="meta">${icon("chat")} ${x.entries} arguments &middot; ${x.comments} comments &middot; ${x.votes} votes &middot; ${ago(x.last_activity)}</div></a>`)}</div>
+      <div class="meta">${icon("chat")} ${x.entries} arguments &middot; ${x.comments} comments &middot; ${x.votes} votes &middot; ${ago(x.last_activity)}</div></a>`)}</div>` : html`<div class="panel"><div class="empty big"><h2>No debates yet</h2><p class="muted">Pose a question, set out two positions, and invite others to argue them well.</p><a class="btn primary" href="#/debates/new" data-need-login>Propose the first debate</a></div></div>`}
   <div class="note-box">${icon("info")}<p><b>How debates work here.</b> Positions are presented side by side. Votes ask which case was <i>argued more convincingly</i>, not which view is true, and results stay hidden until you have judged for yourself.</p></div>` };
 });
 

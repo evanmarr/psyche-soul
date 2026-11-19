@@ -17,7 +17,7 @@ ACT["votd-bm"] = async el => {
 page("/", async () => {
   const [list, votd, deb, lib, prog] = await Promise.all([homeList("all"), api("/votd"), api("/debates"), api("/library"), S.user ? api("/progress").catch(() => null) : null]);
   const quick = [["book", "Read the Bible", "KJV · Annotate · Quote", "#/bible", "feature"], ["chat", "Join a Discussion", "Theology · Philosophy · More", "#/forums"], ["scale", "Debate a Topic", "Structured · Civil · In-Depth", "#/debates"], ["layers", "Explore the Library", "Articles · Resources · Essays", "#/library"]];
-  const feat = deb.items[0];
+  const feat = deb.items[0] || null;
   return { title: "", html: html`
   <section class="hero" aria-label="Psyche and Soul"><div class="hero-art"></div><div class="hero-inner">
     <h1 class="hero-title">Psyche <span class="amp">&amp;</span> Soul</h1>
@@ -40,7 +40,7 @@ page("/", async () => {
     </aside></div>
   <div class="home-grid two">
     <section class="panel"><header class="phead2"><h2>${icon("scale")} Featured Debate</h2><a class="link" href="#/debates">All debates</a></header>
-      <a class="feature-link" href="#/debates/${feat.id}"><h3>${feat.title}</h3><p class="muted">${feat.question}</p><div class="sides"><span class="side aff">${feat.aff_label}</span><span class="vs">vs</span><span class="side opp">${feat.opp_label}</span></div></a></section>
+      ${feat ? html`<a class="feature-link" href="#/debates/${feat.id}"><h3>${feat.title}</h3><p class="muted">${feat.question}</p><div class="sides"><span class="side aff">${feat.aff_label}</span><span class="vs">vs</span><span class="side opp">${feat.opp_label}</span></div></a></section>` : html`<div class="feature-link"><h3>No debates yet</h3><p class="muted">Pose a question, set out two positions, and invite others to argue them well.</p><a class="btn primary" href="#/debates/new" data-need-login>Propose the first debate</a></div></section>`}
     <section class="panel"><header class="phead2"><h2>${icon("layers")} From the Library</h2><a class="link" href="#/library">Browse</a></header>
       <div class="list flat">${lib.items.slice(0, 3).map(a => html`<a class="hrow col" href="#/library/${a.id}"><b>${a.title}</b><span class="muted">${typeNames[a.type]} &middot; ${a.author}</span></a>`)}</div></section>
   </div>
