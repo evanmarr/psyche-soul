@@ -1,6 +1,6 @@
 /* Homepage. */
 "use strict";
-const HOME_FILTERS = [["all", "All"], ["theology", "Theology"], ["psychology", "Psychology"], ["debates", "Debates"]];
+const HOME_FILTERS = [["all", "All"], ["theology", "Theology"], ["philosophy", "Philosophy"], ["debates", "Debates"]];
 async function homeList(f) {
   if (f === "debates") { const d = await api("/debates"); return html`${d.items.slice(0, 5).map(debateRow)}`; }
   const d = await api("/discussions" + qs({ cat: f === "all" ? "" : f, sort: "active", limit: 5 }));
@@ -16,13 +16,13 @@ ACT["votd-bm"] = async el => {
 };
 page("/", async () => {
   const [list, votd, deb, lib, prog] = await Promise.all([homeList("all"), api("/votd"), api("/debates"), api("/library"), S.user ? api("/progress").catch(() => null) : null]);
-  const quick = [["book", "Read the Bible", "KJV · Annotate · Quote", "#/bible", "feature"], ["chat", "Join a Discussion", "Theology · Psychology · More", "#/forums"], ["scale", "Debate a Topic", "Structured · Civil · In-Depth", "#/debates"], ["layers", "Explore the Library", "Articles · Resources · Essays", "#/library"]];
+  const quick = [["book", "Read the Bible", "KJV · Annotate · Quote", "#/bible", "feature"], ["chat", "Join a Discussion", "Theology · Philosophy · More", "#/forums"], ["scale", "Debate a Topic", "Structured · Civil · In-Depth", "#/debates"], ["layers", "Explore the Library", "Articles · Resources · Essays", "#/library"]];
   const feat = deb.items[0];
   return { title: "", html: html`
   <section class="hero" aria-label="Psyche and Soul"><div class="hero-art"></div><div class="hero-inner">
     <h1 class="hero-title">Psyche <span class="amp">&amp;</span> Soul</h1>
-    <p class="hero-sub"><span>Theology</span><i>&bull;</i><span>Psychology</span><i>&bull;</i><span>Discussion</span></p>
-    <p class="hero-tag">Where the study of the mind meets the study of the soul.</p></div></section>
+    <p class="hero-sub"><span>Theology</span><i>&bull;</i><span>Philosophy</span><i>&bull;</i><span>Discussion</span></p>
+    <p class="hero-tag">Where the love of wisdom meets the study of the soul.</p></div></section>
   <section class="quick">${quick.map(([ic, t, s, h, f]) => html`<a class="qcard ${f || ""}" href="${h}"><span class="qico">${icon(ic)}</span><span class="qtxt"><b>${t}</b><small>${s}</small></span>${icon("right", "qarrow")}</a>`)}</section>
   <div class="home-grid">
     <section class="panel recent"><header class="phead2"><h2>Recent Discussions</h2><div class="fchips" id="hfilters">${HOME_FILTERS.map(([k, l], i) => html`<button class="fchip ${i === 0 ? "on" : ""}" data-act="home-filter" data-f="${k}">${l}</button>`)}</div></header>

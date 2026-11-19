@@ -9,7 +9,7 @@ function setNav(path) {
   $$("#topnav a, #sidebar a[data-nav]").forEach(a => a.classList.toggle("on", a.dataset.nav === k));
   $$("#sidebar a[data-topic]").forEach(a => a.classList.toggle("on", path === "/topic/" + a.dataset.topic));
 }
-const SIDE_TOPICS = ["theology", "psychology", "faith-mental-health", "human-nature", "philosophy", "mind-soul", "biblical-interpretation", "apologetics"];
+const SIDE_TOPICS = ["theology", "philosophy", "philosophy-of-religion", "faith-reason", "human-nature", "mind-soul", "biblical-interpretation", "apologetics"];
 function renderChrome() {
   $("#topnav").innerHTML = NAV.map(([p, l, , h]) => `<a href="${h}" data-nav="${p}">${l}</a>`).join("");
   const side = $("#sidebar");

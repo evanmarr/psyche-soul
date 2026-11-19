@@ -532,7 +532,7 @@ def debate_vote(r):
     t = _tally(r, did); return {"tally": t, "my_vote": {"side": side, "moved": 1 if r.body.get("moved") else 0}, "votes": t["aff"] + t["opp"]}
 
 # ---------------------------------------------------------------- library
-TYPES = {"article": "Article", "essay": "Essay", "research": "Research summary", "biblical": "Biblical studies", "apologetics": "Apologetics", "book": "Recommended book"}
+TYPES = {"article": "Article", "essay": "Essay", "research": "Study guide", "biblical": "Biblical studies", "apologetics": "Apologetics", "book": "Recommended book"}
 
 @route("GET", "/api/library")
 def library(r):

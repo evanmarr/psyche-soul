@@ -76,7 +76,7 @@ page("/forums", async (_, q) => {
   const link = o => "#/forums" + qs({ ...f, ...o });
   const cur = S.cats.find(c => c.slug === f.cat);
   return { title: "Forums", html: html`
-  <div class="page-head"><div><h1>Forums</h1><p class="lede">Thoughtful conversation about theology, psychology and the questions between them.</p></div>
+  <div class="page-head"><div><h1>Forums</h1><p class="lede">Thoughtful conversation about theology, philosophy and the questions between them.</p></div>
     <a class="btn primary" href="#/forums/new${cur ? "?cat=" + cur.slug : ""}" data-need-login>${icon("plus")} New discussion</a></div>
   <div class="chips" role="tablist"><a class="chip ${f.cat === "all" ? "on" : ""}" href="${link({ cat: "all" })}">All</a>
     ${S.cats.map(c => html`<a class="chip ${f.cat === c.slug ? "on" : ""}" href="${link({ cat: c.slug })}">${c.name}<small>${c.discussions}</small></a>`)}</div>
@@ -111,8 +111,8 @@ page("/forums/new", async (_, q) => {
     <div class="grid2"><label>Category<select name="category">${S.cats.map(c => html`<option value="${c.slug}" ${c.slug === cat ? "selected" : ""}>${c.name}</option>`)}</select></label>
       <label>What kind of contribution is this?<select name="label">${Object.entries(S.config.labels).map(([k, v]) => html`<option value="${k}" ${k === (pre.label || "discussion") ? "selected" : ""}>${v}</option>`)}</select></label></div>
     <label>Group (optional)<select name="group"><option value="">Public forum</option>${groups.map(g => html`<option value="${g.slug}" ${q.group === g.slug ? "selected" : ""}>${g.name}</option>`)}</select></label>
-    <label>Tags<input name="tags" maxlength="80" placeholder="e.g. memory, free-will, romans (up to 5)"><small>Psychology subtopics: cognitive, behavioral, developmental, personality, consciousness, emotions, memory, motivation, relationships, mental-health, philosophy-of-mind.</small></label>
-    <label>Your post<textarea name="body" rows="10" required minlength="10" maxlength="10000" placeholder="Share your question or argument. Say what you are drawing on: research, Scripture, a theological tradition, or personal experience.">${pre.body || ""}</textarea></label>
+    <label>Tags<input name="tags" maxlength="80" placeholder="e.g. ethics, free-will, romans (up to 5)"><small>Philosophy topics: metaphysics, epistemology, ethics, logic, philosophy-of-mind, philosophy-of-religion, political-philosophy, aesthetics, ancient, medieval, modern, existentialism.</small></label>
+    <label>Your post<textarea name="body" rows="10" required minlength="10" maxlength="10000" placeholder="Share your question or argument. Say what you are drawing on: a text, an argument, Scripture, a theological tradition, or personal experience.">${pre.body || ""}</textarea></label>
     <p id="form-err" class="form-err"></p>
     <div class="row between"><span class="muted small">Please be charitable and cite sources. This is not a place for medical or crisis advice.</span><button class="btn primary" type="submit">Post discussion</button></div>
   </form>${legend()}</div>` };

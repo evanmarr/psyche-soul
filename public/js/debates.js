@@ -30,7 +30,7 @@ FORM.newdebate = async (f, d) => { const r = await api("/debates", { method: "PO
 
 const scriptureBlock = vs => vs.length ? html`<details class="scripture"><summary>${icon("book")} Supporting Scripture <span class="muted">(${vs.map(v => v.label).join("; ")})</span></summary>
   ${vs.map(v => html`<blockquote><a class="ref" href="#/bible/${v.book}/${v.chapter}?v=${v.verse}">${v.label}</a> <span>${v.text}</span><cite>KJV</cite></blockquote>`)}</details>` : "";
-const refsBlock = rs => rs.length ? html`<details class="refsbox"><summary>${icon("scroll")} Research &amp; references <span class="muted">(${rs.length})</span></summary><ul>${rs.map(r => html`<li>${r}</li>`)}</ul></details>` : "";
+const refsBlock = rs => rs.length ? html`<details class="refsbox"><summary>${icon("scroll")} Sources &amp; references <span class="muted">(${rs.length})</span></summary><ul>${rs.map(r => html`<li>${r}</li>`)}</ul></details>` : "";
 function entryCard(e, d) {
   const label = e.side === "aff" ? d.aff_label : d.opp_label;
   return html`<article class="entry ${e.side}"><header><span class="sidetag ${e.side}">${label}</span><span class="kind">${KIND[e.kind]}</span></header>
@@ -79,7 +79,7 @@ ACT.contribute = () => {
     <label>Type<select name="kind"><option value="opening">Opening argument</option><option value="rebuttal">Rebuttal</option><option value="counterargument" selected>Counterargument</option></select></label></div>
   <label>Your argument<textarea name="body" rows="8" required minlength="40" maxlength="4000" placeholder="Make your case. Engage the strongest version of the other side."></textarea></label>
   <label>Supporting Bible passages<textarea name="verses" rows="2" placeholder="One per line, e.g.&#10;Romans 9:19-21&#10;Joshua 24:15"></textarea></label>
-  <label>Research &amp; references<textarea name="refs" rows="3" placeholder="One per line, e.g.&#10;Kessler, R. et al. (2005). Archives of General Psychiatry 62(6)"></textarea></label>
+  <label>Sources &amp; references<textarea name="refs" rows="3" placeholder="One per line, e.g.&#10;Aquinas, T. Summa Theologiae I, q. 13"></textarea></label>
   <p class="form-err" id="entry-err"></p><div class="row end gap"><button type="button" class="btn" data-act="close-modal">Cancel</button><button class="btn primary">Post</button></div></form>`, { wide: true });
 };
 FORM.entry = async (f, d) => {

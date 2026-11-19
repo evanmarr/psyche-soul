@@ -5,8 +5,12 @@ from seed_content import *
 
 def run(reset=False, demo=True):
     if reset and db.REMOTE:
-        raise SystemExit("--reset only works on the local database. To rebuild Turso, delete the database in the Turso dashboard and create a new one.")
-    if reset:
+        c = db.connect()                                      # drop everything (children first), then rebuild below
+        for t in ("login_attempts", "notifications", "debate_votes", "debate_entries", "debates", "plan_progress", "plans", "history", "notes", "highlights",
+                  "bookmarks", "reactions", "comments", "discussions", "group_members", "groups_", "categories", "sessions", "users", "articles"):
+            c.execute(f"DROP TABLE IF EXISTS {t}")
+        c.close(); print("Remote database cleared.")
+    elif reset:
         for ext in ("", "-wal", "-shm"):
             if os.path.exists(db.DB_PATH + ext): os.remove(db.DB_PATH + ext)
     db.init()
@@ -31,7 +35,7 @@ def run(reset=False, demo=True):
     rnd = random.Random(7)
     memberships = {"reformed-theology": ["rachel_kim", "david_okafor", "marcus_bell", "thomas_ashby"], "biblical-greek": ["rachel_kim", "demo", "marcus_bell"],
         "christian-apologetics": ["thomas_ashby", "rachel_kim", "sofia_marin", "demo", "marcus_bell"], "philosophy-of-religion": ["sofia_marin", "thomas_ashby", "rachel_kim", "amara_lindqvist"],
-        "cognitive-psychology": ["amara_lindqvist", "eleanor_vance", "sofia_marin", "demo"], "faith-and-mental-health": ["david_okafor", "eleanor_vance", "marcus_bell", "demo", "rachel_kim"]}
+        "ethics-moral-philosophy": ["amara_lindqvist", "eleanor_vance", "sofia_marin", "demo"], "faith-and-reason": ["david_okafor", "eleanor_vance", "marcus_bell", "demo", "rachel_kim"]}
     for g, members in memberships.items():
         for m in members:
             c.execute("INSERT OR IGNORE INTO group_members VALUES(?,?,?)", (gid[g], uid[m], ago(rnd.randint(24, 24 * 80))))
@@ -96,7 +100,7 @@ def run(reset=False, demo=True):
     for v in (16, 17): c.execute("INSERT INTO highlights VALUES(?,?,?,?,?)", (d, john, 3, v, "gold"))
     c.execute("INSERT INTO highlights VALUES(?,?,?,?,?)", (d, rom, 12, 2, "purple"))
     c.execute("INSERT INTO notes(user_id,book,chapter,verse,verse_end,body,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)",
-              (d, rom, 12, 2, 2, "Renewal of the mind comes before the transformation of behavior. Worth comparing with the research on habit and reappraisal.", ago(100), ago(100)))
+              (d, rom, 12, 2, 2, "Renewal of the mind comes before the transformation of behavior. Worth comparing with Aristotle on habit and the renewing of desire.", ago(100), ago(100)))
     c.execute("INSERT INTO bookmarks VALUES(?,?,?,?)", (d, "verse", f"{rom}:12:2", ago(80)))
     c.execute("INSERT INTO bookmarks VALUES(?,?,?,?)", (d, "article", str(aids[0]), ago(60)))
     c.execute("INSERT INTO bookmarks VALUES(?,?,?,?)", (d, "discussion", str(dids[0]), ago(40)))

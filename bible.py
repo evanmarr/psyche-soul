@@ -67,10 +67,10 @@ def ref_label(book_id, ch, v=None, v_end=None):
 def _find_book(name):
     n = re.sub(r"[^a-z0-9 ]", "", name.lower()).strip()
     if not n: return None
-    m = re.match(r"^(1|2|3|i{1,3}|first|second|third)\s*(.+)$", n)
+    m = re.match(r"^(?:([123])\s*|(i{1,3}|first|second|third)\s+)(.+)$", n)     # "1 john", "1john", "ii kings", never "isaiah"
     prefix = ""
     if m:
-        prefix = {"1": "1", "i": "1", "first": "1", "2": "2", "ii": "2", "second": "2", "3": "3", "iii": "3", "third": "3"}[m.group(1)]; n = m.group(2).strip()
+        prefix = {"1": "1", "i": "1", "first": "1", "2": "2", "ii": "2", "second": "2", "3": "3", "iii": "3", "third": "3"}[m.group(1) or m.group(2)]; n = m.group(3).strip()
     key = n.replace(" ", "")
     if prefix and key in _ABBR and key in ("cor", "thess", "tim"):
         return {"cor": 45, "thess": 51, "tim": 53}[key] + int(prefix) - 1

@@ -10,7 +10,7 @@ page("/library", async (_, q) => {
   const f = { type: q.type || "all", cat: q.cat || "all", q: q.q || "", saved: q.saved || "", tag: q.tag || "" };
   const d = await api("/library" + qs(f)); const link = o => "#/library" + qs({ ...f, ...o });
   return { title: "Library", html: html`
-  <div class="page-head"><div><h1>Library</h1><p class="lede">Theological and psychological articles, essays, research summaries, biblical studies, philosophy, apologetics and recommended books.</p></div></div>
+  <div class="page-head"><div><h1>Library</h1><p class="lede">Theological and philosophical articles, essays, study guides, biblical studies, apologetics and recommended books.</p></div></div>
   <div class="toolbar"><form data-form="libsearch" class="inline-search" data-keep='${JSON.stringify({ type: f.type, cat: f.cat })}'>${icon("search")}<input name="q" value="${f.q}" placeholder="Search the library..." aria-label="Search the library"></form>
     <label class="sel">Topic <select data-chg="lib-cat" data-type="${f.type}" data-q="${f.q}"><option value="all">All topics</option>${S.cats.map(c => html`<option value="${c.slug}" ${f.cat === c.slug ? "selected" : ""}>${c.name}</option>`)}</select></label>
     ${S.user ? html`<a class="chip ${f.saved ? "on" : ""}" href="${link({ saved: f.saved ? "" : "1" })}">${icon("bookmark")} Saved</a>` : ""}</div>
@@ -27,7 +27,7 @@ page("/library/:id", async ({ id }) => {
     <p class="crumbs"><a href="#/library">Library</a> / <a href="#/library?type=${a.type}">${a.type_name}</a></p>
     <div class="row gap wrap"><span class="type t-${a.type}">${a.type_name}</span>${labelBadge(a.label)}<span class="muted small">${catName(a.category)}</span></div>
     <h1 class="dh">${a.title}</h1><p class="byline">By <b>${a.author}</b>${a.read_minutes ? html` &middot; ${a.read_minutes} min read` : ""}</p>
-    ${a.label === "research" ? html`<div class="note-box">${icon("info")}<p>This resource summarizes <b>empirical research</b>. It is educational and not a substitute for professional advice.</p></div>` : a.label === "theory" ? html`<div class="note-box">${icon("info")}<p>This resource presents a <b>theoretical interpretation</b>. It goes beyond what the data alone establish.</p></div>` : ""}
+    ${a.label === "research" ? html`<div class="note-box">${icon("info")}<p>This resource is a <b>study guide to classical sources</b>. Read the primary texts alongside it.</p></div>` : a.label === "theory" ? html`<div class="note-box">${icon("info")}<p>This resource presents a <b>philosophical theory</b>. Thoughtful people disagree about it.</p></div>` : ""}
     <div class="rich body-text article-body">${rich(a.body)}</div>
     ${a.tags.length ? html`<div class="tags">${a.tags.map(t => html`<a class="tag" href="#/library?tag=${t}">#${t}</a>`)}</div>` : ""}
     <div class="actions">${bmBtn("article", a.id, a.bookmarked)}<button class="btn" data-act="discuss-article" data-title="${a.title}" data-cat="${a.category}">${icon("chat")} Discuss this</button></div>

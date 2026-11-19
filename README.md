@@ -1,6 +1,6 @@
 # Psyche & Soul
 
-A theological and psychological discussion platform: Bible reader, forums, structured debates, library, groups and accounts.
+A theological and philosophical discussion platform: Bible reader, forums, structured debates, library, groups and accounts.
 
 **Stack:** Python 3.9+ standard library only (no installs), SQLite database, vanilla-JS single-page frontend.
 Chosen for reliability and low maintenance: nothing to `pip install`, one file database, easy to move to Postgres/Flask later (all SQL is isolated in `api.py`).
@@ -42,4 +42,4 @@ No ESV text is bundled. Get a key at https://api.esv.org and set `ESV_API_KEY`; 
 HttpOnly + SameSite cookies, `X-Requested-With` required on writes (CSRF), strict CSP, escaped rendering, parameterized SQL, login/registration rate limiting, avatar validation.
 
 ## Content notes
-Articles and debates are original text; the references cited are real works. Posts are labelled (Established research / Theoretical interpretation / Theological position / Philosophical argument / Open discussion) so scientific findings and theological claims stay distinct.
+Articles and debates are original text; the references cited are real works. Posts are labelled (Classical source / Philosophical theory / Theological position / Philosophical argument / Open discussion) so what a text says, what is argued, and what the church teaches stay distinct.

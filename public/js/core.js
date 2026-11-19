@@ -187,13 +187,13 @@ let updateSelBar = null;
 
 /* ---------- shared UI pieces ---------- */
 const labelBadge = l => html`<span class="label l-${l}" title="${S.config.labels[l] || l}">${S.config.labels[l] || l}</span>`;
-const typeNames = { article: "Article", essay: "Essay", research: "Research summary", biblical: "Biblical studies", apologetics: "Apologetics", book: "Recommended book" };
+const typeNames = { article: "Article", essay: "Essay", research: "Study guide", biblical: "Biblical studies", apologetics: "Apologetics", book: "Recommended book" };
 const catIcon = slug => (S.cats.find(c => c.slug === slug) || {}).icon || "chat";
 const catName = slug => (S.cats.find(c => c.slug === slug) || {}).name || slug;
 function authorLink(a) { return html`<a class="who" href="#/u/${a.username}">${avatar(a, 22)}<span>${a.name}</span></a>`; }
 function legend() {
   return html`<details class="legend"><summary>${icon("info")} How we label contributions</summary>
-    <p>Psyche &amp; Soul keeps different kinds of claims distinct. A post can be labelled as <b>Established research</b> (replicated empirical findings), <b>Theoretical interpretation</b> (models and frameworks that go beyond the data), a <b>Theological position</b>, a <b>Philosophical argument</b>, or <b>Open discussion</b>. Scientific findings are not theological verdicts, and theological claims are not scientific findings.</p></details>`;
+    <p>Psyche &amp; Soul keeps different kinds of claims distinct. A post can be labelled as <b>Classical source</b> (what a text or thinker actually says), <b>Philosophical theory</b> (a framework that goes beyond the texts), a <b>Theological position</b>, a <b>Philosophical argument</b>, or <b>Open discussion</b>. What a philosopher argued is not the same as what the church teaches, and a theological claim is not a philosophical proof.</p></details>`;
 }
 const emptyState = (t, s = "") => html`<div class="empty"><p><b>${t}</b></p>${s ? html`<p class="muted">${s}</p>` : ""}</div>`;
 function requireLogin(title = "Sign in to continue") {

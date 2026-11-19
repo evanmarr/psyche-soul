@@ -35,20 +35,20 @@ page("/groups/:slug", async ({ slug }, q) => {
 });
 
 /* ----- topics ----- */
-const SUBTOPICS = [["cognitive", "Cognitive psychology"], ["behavioral", "Behavioral psychology"], ["developmental", "Developmental psychology"], ["personality", "Personality"], ["consciousness", "Consciousness"], ["human-behavior", "Human behavior"],
-  ["emotions", "Emotions"], ["memory", "Memory"], ["motivation", "Motivation"], ["relationships", "Relationships"], ["mental-health", "Mental health"], ["philosophy-of-mind", "Philosophy of mind"]];
+const SUBTOPICS = [["metaphysics", "Metaphysics"], ["epistemology", "Epistemology"], ["ethics", "Ethics"], ["logic", "Logic"], ["philosophy-of-mind", "Philosophy of mind"], ["philosophy-of-religion", "Philosophy of religion"],
+  ["political-philosophy", "Political philosophy"], ["aesthetics", "Aesthetics"], ["ancient", "Ancient philosophy"], ["medieval", "Medieval philosophy"], ["modern", "Modern philosophy"], ["existentialism", "Existentialism"]];
 page("/topics", async () => ({ title: "Topics", html: html`<div class="page-head"><div><h1>Topics</h1><p class="lede">Browse every area of conversation.</p></div></div>
   <div class="cards">${S.cats.map(c => html`<a class="card" href="#/topic/${c.slug}"><span class="card-ico">${icon(c.icon)}</span><h3>${c.name}</h3><p class="muted">${c.description}</p><span class="muted small">${c.discussions} discussions</span></a>`)}</div>` }));
 page("/topic/:slug", async ({ slug }) => {
   const c = await api("/topics/" + slug);
   return { title: c.name, html: html`<p class="crumbs"><a href="#/topics">Topics</a> / ${c.name}</p>
   <header class="thead"><span class="card-ico big">${icon(c.icon)}</span><div><h1>${c.name}</h1><p class="lede">${c.description}</p></div><a class="btn primary" href="#/forums/new?cat=${c.slug}" data-need-login>${icon("plus")} New discussion</a></div></header>
-  ${c.slug === "psychology" ? html`<section><h2 class="sec">Areas of psychology</h2><div class="chips wrapchips">${SUBTOPICS.map(([t, n]) => html`<a class="chip" href="#/forums?tag=${t}">${n}</a>`)}</div>
-    <div class="note-box">${icon("info")}<p><b>Keeping categories honest.</b> Psychology posts here are labelled so you can tell <b>established research</b> from <b>theoretical interpretation</b>, and both from <b>theological positions</b>. We do not present theological opinions as scientific findings, or the reverse.</p></div></section>` : ""}
+  ${c.slug === "philosophy" ? html`<section><h2 class="sec">Areas of philosophy</h2><div class="chips wrapchips">${SUBTOPICS.map(([t, n]) => html`<a class="chip" href="#/forums?tag=${t}">${n}</a>`)}</div>
+    <div class="note-box">${icon("info")}<p><b>Keeping categories honest.</b> Philosophy posts here are labelled so you can tell what a <b>classical source</b> says from a <b>philosophical theory</b> or argument, and both from <b>theological positions</b>. We do not present a philosophical argument as church teaching, or the reverse.</p></div></section>` : ""}
   <section><div class="row between"><h2 class="sec">Active discussions</h2><a class="link" href="#/forums?cat=${c.slug}">All discussions ${icon("right")}</a></div><div class="panel list">${c.discussions.length ? c.discussions.map(discRow) : emptyState("No discussions yet")}</div></section>
   ${c.debates.length ? html`<section><h2 class="sec">Debates</h2><div class="panel list">${c.debates.map(d => html`<a class="hrow" href="#/debates/${d.id}"><b>${d.title}</b><span class="muted">${d.question}</span></a>`)}</div></section>` : ""}
   ${c.articles.length ? html`<section><h2 class="sec">From the library</h2><div class="panel list">${c.articles.map(a => html`<a class="hrow" href="#/library/${a.id}"><b>${a.title}</b><span class="muted">${a.author}</span></a>`)}</div></section>` : ""}
-  ${c.slug === "psychology" || c.slug === "faith-mental-health" ? html`<div class="note-box warn">${icon("info")}<p>Discussion here is peer conversation, not medical or mental-health advice. If you are in crisis, contact local emergency services (in the US, call or text 988).</p></div>` : ""}` };
+  ` };
 });
 
 /* ----- search ----- */
@@ -126,7 +126,7 @@ FORM.password = async (f, d) => { try { await api("/me/password", { method: "POS
 page("/guidelines", async () => ({ title: "Community guidelines", html: html`<div class="narrow article"><h1>Community guidelines</h1>
   <p class="lede">Psyche &amp; Soul exists for people who want to think seriously about faith and the mind. These guidelines keep that possible.</p>
   <div class="rich body-text"><h3>Be charitable</h3><p>Describe other views the way their best defenders would. Assume good faith. Disagree with arguments, not people.</p>
-  <h3>Say what kind of claim you are making</h3><p>Use the labels. <b>Established research</b> means replicated empirical findings. <b>Theoretical interpretation</b> means a model that goes beyond the data. <b>Theological position</b> and <b>Philosophical argument</b> are their own kinds of claim. Do not present a theological opinion as a scientific finding, or the reverse.</p>
+  <h3>Say what kind of claim you are making</h3><p>Use the labels. <b>Classical source</b> means what a text or thinker actually says. <b>Philosophical theory</b> means a framework that goes beyond the texts. <b>Theological position</b> and <b>Philosophical argument</b> are their own kinds of claim. Do not present a philosophical argument as church teaching, or the reverse.</p>
   <h3>Cite your sources</h3><p>Link or name the Scripture, study, book or tradition you are drawing on. Quote Bible passages with their references; they become links automatically.</p>
-  <h3>Care for people</h3><p>Conversations about mental health are peer discussion only. Please do not give medical advice or diagnose others. If someone may be in crisis, encourage them to contact local emergency services (in the US, call or text 988).</p>
+  <h3>Care for people</h3><p>Some questions here touch real suffering and doubt. Be gentle, and remember that a person is not an argument. If someone seems to be in crisis, encourage them to contact local emergency services (in the US, call or text 988).</p>
   <h3>Keep debates honest</h3><p>Votes in debates reward the quality of reasoning, not popularity or which view you already hold.</p></div></div>` }));
