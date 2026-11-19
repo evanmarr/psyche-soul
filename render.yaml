@@ -1,0 +1,22 @@
+# Render Blueprint: deploys the app with a persistent disk for the SQLite database.
+services:
+  - type: web
+    name: psyche-soul
+    runtime: python
+    plan: starter            # persistent disks require a paid plan
+    buildCommand: "echo no build step"
+    startCommand: "python3 server.py"
+    healthCheckPath: /
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: PSYCHE_SECURE
+        value: "1"
+      - key: PSYCHE_DB
+        value: /var/data/psyche.db
+      - key: ESV_API_KEY
+        sync: false          # paste your key in the Render dashboard (optional)
+    disk:
+      name: psyche-data
+      mountPath: /var/data
+      sizeGB: 1
