@@ -8,7 +8,12 @@ from urllib.parse import urlsplit
 ROOT = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.environ.get("PSYCHE_DB", os.path.join(ROOT, "data", "psyche.db"))
 TURSO_URL = os.environ.get("TURSO_DATABASE_URL", "").strip()
-TURSO_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "").strip()
+def _env_token():
+    """The Vercel/Turso integration may add a prefix to the token's name (e.g. TURSO_DATABASE_TURSO_AUTH_TOKEN)."""
+    for k, v in os.environ.items():
+        if k.endswith("TURSO_AUTH_TOKEN") and v.strip(): return v.strip()
+    return ""
+TURSO_TOKEN = _env_token()
 REMOTE = bool(TURSO_URL)
 
 SCHEMA = """
