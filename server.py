@@ -3,7 +3,7 @@
 import os, sys
 import db, seed
 from framework import serve
-import api  # noqa: F401  (registers routes)
+import routes  # noqa: F401  (registers routes)
 
 if __name__ == "__main__":
     db.init()

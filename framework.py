@@ -6,9 +6,9 @@ from urllib.parse import urlsplit, parse_qs, unquote
 import db
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-STATIC = os.path.join(ROOT, "static")
+STATIC = os.path.join(ROOT, "public")
 COOKIE = "ps_session"
-SECURE = os.environ.get("PSYCHE_SECURE", "") == "1"
+SECURE = os.environ.get("PSYCHE_SECURE", "") == "1" or bool(os.environ.get("VERCEL"))
 ROUTES = []
 
 class HTTPError(Exception):
@@ -22,7 +22,7 @@ def route(method, pattern):
 class Req:
     def __init__(self, handler, method, path, query, body, params):
         self.h, self.method, self.path, self.query, self.body, self.params = handler, method, path, query, body, params
-        self.db = db.connect(); self.user = None; self.cookies_out = []; self.ip = handler.client_address[0]
+        self.db = db.connect(); self.user = None; self.cookies_out = []; self.ip = (handler.headers.get("X-Forwarded-For", "").split(",")[0].strip() or handler.client_address[0])
         self._auth()
     def _auth(self):
         c = SimpleCookie(self.h.headers.get("Cookie", ""))
@@ -71,7 +71,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _static(self, path):
         rel = "index.html" if path in ("/", "") else unquote(path.lstrip("/"))
-        if rel.startswith("static/"): rel = rel[7:]
+        if rel.startswith("public/"): rel = rel[7:]
         full = os.path.normpath(os.path.join(STATIC, rel))
         if not full.startswith(STATIC + os.sep) or not os.path.isfile(full):
             if "." not in os.path.basename(rel): full = os.path.join(STATIC, "index.html")     # SPA fallback
@@ -83,6 +83,10 @@ class Handler(BaseHTTPRequestHandler):
 
     def _dispatch(self, method):
         u = urlsplit(self.path)
+        query = parse_qs(u.query)
+        if u.path in ("/api/index", "/api/index.py") and "path" in query:        # Vercel rewrite target
+            real = "/api/" + query.pop("path")[0].strip("/")
+            u = u._replace(path=real, query="&".join(f"{k}={v}" for k, vs in query.items() for v in vs))
         if not u.path.startswith("/api/"):
             if method != "GET": return self._json(405, {"error": "Method not allowed"})
             return self._static(u.path)

@@ -5,36 +5,41 @@ A theological and psychological discussion platform: Bible reader, forums, struc
 **Stack:** Python 3.9+ standard library only (no installs), SQLite database, vanilla-JS single-page frontend.
 Chosen for reliability and low maintenance: nothing to `pip install`, one file database, easy to move to Postgres/Flask later (all SQL is isolated in `api.py`).
 
-## Run
+## Run locally
 
 ```bash
-cd ~/Desktop/psyche-soul
-python3 server.py          # http://127.0.0.1:8080  (seeds sample content on first run)
+python3 server.py          # http://127.0.0.1:8080 (uses a local SQLite file, seeds sample content on first run)
 ```
 
-Demo account (sample data, reading progress, notes already in place): **demo / PsycheDemo1!**
-Reset the sample data any time: `python3 seed.py --reset`.
+Local demo account: **demo / PsycheDemo1!**. Reset sample data: `python3 seed.py --reset`.
 
-Environment variables: `PORT`, `HOST`, `PSYCHE_DB` (database path), `ESV_API_KEY`, `PSYCHE_SECURE=1` (set when served over HTTPS so cookies are `Secure`).
+## Deploy (GitHub + Vercel + Turso)
 
-## What you need to configure
+The pages in `public/` are served statically by Vercel. The backend (`api/index.py` -> `framework.py` + `routes.py`) runs as one Python serverless function. Because Vercel has no persistent disk, production data lives in **Turso** (hosted SQLite, same SQL as local; see `db.py`).
 
-1. **ESV text (optional, required for the ESV toggle).** The ESV is copyrighted, so no ESV text is bundled. Get a key at https://api.esv.org, then run `ESV_API_KEY=your-key python3 server.py`. The reader fetches chapters on demand through `bible.py` (`esv_chapter`) and shows Crossway's attribution. Review Crossway's usage/caching terms before going public. Until then the reader uses the public-domain **KJV** (`data/kjv.json`).
-2. **Before going public:** put it behind HTTPS (reverse proxy such as Caddy/nginx), set `PSYCHE_SECURE=1`, remove the demo account (`DELETE FROM users WHERE username='demo'`) and the "Use the demo account" button in `static/js/core.js`, and add email verification / password reset (needs an email provider), plus moderation tools.
+1. Push to GitHub. 2. Create a Turso database (Vercel dashboard -> Storage -> Turso). 3. Seed it once from your machine:
+   `TURSO_DATABASE_URL=... TURSO_AUTH_TOKEN=... python3 seed.py --no-demo`
+4. Import the repo in Vercel and make sure the two Turso variables are set. Optional: `ESV_API_KEY`.
+
+## Environment variables
+`TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` (production database), `ESV_API_KEY` (ESV text), `PORT`/`HOST`/`PSYCHE_DB` (local server), `PSYCHE_SECURE=1` (Secure cookies; automatic on Vercel).
+
+## ESV
+No ESV text is bundled. Get a key at https://api.esv.org and set `ESV_API_KEY`; `bible.py` fetches chapters on demand and the reader shows Crossway's notice. Check Crossway's terms before going public. Until then the reader uses the public-domain KJV (`data/kjv.json`).
 
 ## Layout
-
 | File | Purpose |
 |---|---|
-| `server.py`, `framework.py` | HTTP server, routing, sessions, security headers |
-| `api.py` | All JSON endpoints |
-| `db.py`, `security.py` | Schema, password hashing (PBKDF2-SHA256), tokens |
-| `bible.py` | KJV + ESV API integration layer, reference parsing, verse search |
+| `api/index.py`, `vercel.json` | Vercel function entry and routing |
+| `server.py`, `framework.py` | Local server, routing, sessions, security headers |
+| `routes.py` | All JSON endpoints |
+| `db.py`, `security.py` | Schema, SQLite/Turso access, password hashing |
+| `bible.py` | KJV + ESV API layer, reference parsing, verse search |
 | `seed.py`, `seed_content.py` | Sample users, discussions, debates, articles, groups, plans |
-| `static/` | Frontend: `js/` (one file per area), `css/app.css`, `img/` |
+| `public/` | Frontend (`js/`, `css/app.css`, `img/`) |
 
 ## Security notes
-HttpOnly + SameSite cookies, `X-Requested-With` required on all writes (CSRF), strict CSP, all user text escaped on render, parameterized SQL, login/registration rate limiting, avatar type/size validation.
+HttpOnly + SameSite cookies, `X-Requested-With` required on writes (CSRF), strict CSP, escaped rendering, parameterized SQL, login/registration rate limiting, avatar validation.
 
 ## Content notes
-Sample articles and debates are original text written for this project; references cited are real works. Posts carry labels (Established research / Theoretical interpretation / Theological position / Philosophical argument / Open discussion) so the platform never blurs scientific findings with theological claims.
+Articles and debates are original text; the references cited are real works. Posts are labelled (Established research / Theoretical interpretation / Theological position / Philosophical argument / Open discussion) so scientific findings and theological claims stay distinct.

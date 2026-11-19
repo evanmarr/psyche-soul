@@ -3,7 +3,9 @@ import json, os, random, sys
 import db, bible, security
 from seed_content import *
 
-def run(reset=False):
+def run(reset=False, demo=True):
+    if reset and db.REMOTE:
+        raise SystemExit("--reset only works on the local database. To rebuild Turso, delete the database in the Turso dashboard and create a new one.")
     if reset:
         for ext in ("", "-wal", "-shm"):
             if os.path.exists(db.DB_PATH + ext): os.remove(db.DB_PATH + ext)
@@ -15,7 +17,7 @@ def run(reset=False):
     ago = lambda hrs: int(now - hrs * H)
     uid = {}
     for i, (u, name, bio) in enumerate(USERS):
-        pw = security.hash_password("PsycheDemo1!") if u == "demo" else "pbkdf2$0$!$!"   # sample users cannot log in
+        pw = security.hash_password("PsycheDemo1!") if (u == "demo" and demo) else "pbkdf2$0$!$!"   # sample users cannot log in
         cur = c.execute("INSERT INTO users(username,email,pw_hash,display_name,bio,avatar,created_at) VALUES(?,?,?,?,?,?,?)",
                         (u, f"{u}@example.com", pw, name, bio, "", ago(24 * (200 - i * 11))))
         uid[u] = cur.lastrowid
@@ -103,4 +105,4 @@ def run(reset=False):
     print("Seeded: users", len(USERS), "discussions", len(DISCUSSIONS), "debates", len(DEBATES), "articles", len(ARTICLES))
 
 if __name__ == "__main__":
-    run("--reset" in sys.argv)
+    run("--reset" in sys.argv, demo="--no-demo" not in sys.argv)

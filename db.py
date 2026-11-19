@@ -1,11 +1,17 @@
-"""SQLite access and schema for Psyche & Soul."""
-import os, sqlite3, time
+"""Database access. Local development uses a SQLite file; production (Vercel) uses Turso, a hosted SQLite service,
+through its HTTP API. Both speak the same SQL, so the rest of the app does not care which one it gets.
+
+Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN to use Turso."""
+import base64, http.client, json, os, sqlite3, time
+from urllib.parse import urlsplit
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.environ.get("PSYCHE_DB", os.path.join(ROOT, "data", "psyche.db"))
+TURSO_URL = os.environ.get("TURSO_DATABASE_URL", "").strip()
+TURSO_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "").strip()
+REMOTE = bool(TURSO_URL)
 
 SCHEMA = """
-PRAGMA journal_mode=WAL;
 CREATE TABLE IF NOT EXISTS users(
   id INTEGER PRIMARY KEY, username TEXT UNIQUE NOT NULL COLLATE NOCASE, email TEXT UNIQUE NOT NULL COLLATE NOCASE,
   pw_hash TEXT NOT NULL, display_name TEXT NOT NULL, bio TEXT NOT NULL DEFAULT '', avatar TEXT NOT NULL DEFAULT '',
@@ -57,14 +63,83 @@ CREATE TABLE IF NOT EXISTS notifications(id INTEGER PRIMARY KEY, user_id INTEGER
 CREATE TABLE IF NOT EXISTS login_attempts(key TEXT NOT NULL, at INTEGER NOT NULL);
 """
 
+# ------------------------------------------------------------------------ Turso over HTTP (no dependencies)
+class Row(dict):
+    """A result row: row["name"], row[0] and dict(row) all work, like sqlite3.Row."""
+    def __getitem__(self, k): return list(self.values())[k] if isinstance(k, int) else dict.__getitem__(self, k)
+
+class RemoteCursor:
+    def __init__(self, rows=(), lastrowid=None, rowcount=0): self.rows, self.lastrowid, self.rowcount, self._i = list(rows), lastrowid, rowcount, 0
+    def fetchone(self):
+        if self._i < len(self.rows): self._i += 1; return self.rows[self._i - 1]
+        return None
+    def fetchall(self): r, self._i = self.rows[self._i:], len(self.rows); return r
+    def __iter__(self): return iter(self.fetchall())
+
+def _enc(v):
+    if v is None: return {"type": "null"}
+    if isinstance(v, bool): return {"type": "integer", "value": str(int(v))}
+    if isinstance(v, int): return {"type": "integer", "value": str(v)}
+    if isinstance(v, float): return {"type": "float", "value": v}
+    if isinstance(v, (bytes, bytearray)): return {"type": "blob", "base64": base64.b64encode(v).decode()}
+    return {"type": "text", "value": str(v)}
+
+def _dec(c):
+    t = c.get("type")
+    if t == "null": return None
+    if t == "integer": return int(c["value"])
+    if t == "float": return float(c["value"])
+    if t == "blob": return base64.b64decode(c.get("base64", ""))
+    return c.get("value")
+
+class RemoteConn:
+    def __init__(self, url, token):
+        u = urlsplit(url.replace("libsql://", "https://", 1))
+        self.scheme, self.host, self.token = u.scheme, u.netloc, token
+        self._http = None
+    def _post(self, payload):
+        body = json.dumps(payload).encode()
+        for attempt in (0, 1):
+            try:
+                if self._http is None:
+                    self._http = (http.client.HTTPSConnection if self.scheme == "https" else http.client.HTTPConnection)(self.host, timeout=20)
+                self._http.request("POST", "/v2/pipeline", body, {"Authorization": "Bearer " + self.token, "Content-Type": "application/json"})
+                res = self._http.getresponse(); data = res.read()
+                if res.status != 200: raise RuntimeError(f"Database error {res.status}: {data[:200]!r}")
+                return json.loads(data)
+            except (http.client.HTTPException, OSError):
+                self._http = None
+                if attempt: raise
+    def execute(self, sql, args=()):
+        reqs = [{"type": "execute", "stmt": {"sql": "PRAGMA foreign_keys=ON"}},
+                {"type": "execute", "stmt": {"sql": sql, "args": [_enc(a) for a in args]}}, {"type": "close"}]
+        res = self._post({"requests": reqs})["results"][1]
+        if res["type"] == "error":
+            msg = res["error"].get("message", "database error")
+            raise (sqlite3.IntegrityError if "constraint" in msg.lower() else RuntimeError)(msg)
+        r = res["response"]["result"]; cols = [c["name"] for c in r["cols"]]
+        rows = [Row(zip(cols, (_dec(c) for c in row))) for row in r["rows"]]
+        lid = r.get("last_insert_rowid")
+        return RemoteCursor(rows, int(lid) if lid is not None else None, r.get("affected_row_count", 0))
+    def executescript(self, script):
+        for stmt in script.split(";"):
+            if stmt.strip() and not stmt.strip().upper().startswith("PRAGMA"): self.execute(stmt)
+    def commit(self): pass
+    def rollback(self): pass
+    def close(self):
+        if self._http: self._http.close(); self._http = None
+
 def connect():
+    if REMOTE: return RemoteConn(TURSO_URL, TURSO_TOKEN)
     c = sqlite3.connect(DB_PATH, timeout=10)
     c.row_factory = sqlite3.Row
     c.execute("PRAGMA foreign_keys=ON")
     return c
 
 def init():
+    if REMOTE:
+        c = connect(); c.executescript(SCHEMA); c.close(); return
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    c = connect(); c.executescript(SCHEMA); c.commit(); c.close()
+    c = connect(); c.execute("PRAGMA journal_mode=WAL"); c.executescript(SCHEMA); c.commit(); c.close()
 
 def now(): return int(time.time())
