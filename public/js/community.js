@@ -27,7 +27,7 @@ FORM.newgroup = async (f, d) => { try { const r = await api("/groups", { method:
 page("/groups/:slug", async ({ slug }, q) => {
   const g = await api("/groups/" + slug); const tab = q.tab || "discussions";
   return { title: g.name, html: html`<p class="crumbs"><a href="#/groups">Groups</a> / ${g.name}</p>
-  <header class="ghead"><span class="card-ico big">${icon(g.icon)}</span><div><h1>${g.name}</h1><p class="lede">${g.description}</p><p class="muted small">${g.members} members &middot; created by <a href="#/u/${g.owner}">@${g.owner}</a></p></div>
+  <header class="ghead"><span class="card-ico big">${icon(g.icon)}</span><div><h1>${g.name}</h1><p class="lede">${g.description}</p><p class="muted small">${g.members} ${g.members === 1 ? "member" : "members"}${g.owner ? html` &middot; created by <a href="#/u/${g.owner}">@${g.owner}</a>` : ""}</p></div>
     <div class="row gap">${g.is_member ? html`<a class="btn primary" href="#/forums/new?group=${g.slug}">${icon("plus")} New discussion</a><button class="btn" data-act="join" data-slug="${g.slug}">Leave</button>` : html`<button class="btn primary" data-act="join" data-slug="${g.slug}">Join group</button>`}</div></header>
   <div class="tabs"><a class="tab ${tab === "discussions" ? "on" : ""}" href="#/groups/${g.slug}">Discussions</a><a class="tab ${tab === "members" ? "on" : ""}" href="#/groups/${g.slug}?tab=members">Members</a></div>
   ${tab === "members" ? html`<div class="cards members">${g.member_list.map(m => html`<a class="card mem" href="#/u/${m.username}">${avatar(m, 44)}<span><b>${m.name}</b><br><span class="muted small">@${m.username}${m.owner ? " · owner" : ""}</span></span></a>`)}</div>`

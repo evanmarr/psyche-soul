@@ -11,14 +11,14 @@ Chosen for reliability and low maintenance: nothing to `pip install`, one file d
 python3 server.py          # http://127.0.0.1:8080 (uses a local SQLite file, seeds sample content on first run)
 ```
 
-Local demo account: **demo / PsycheDemo1!**. Reset sample data: `python3 seed.py --reset`.
+The site starts with no users, discussions or debates: register an account and start the first conversation. Starter content is limited to topics, groups, the library and reading plans. Wipe and rebuild the local database: `python3 seed.py --reset`.
 
 ## Deploy (GitHub + Vercel + Turso)
 
 The pages in `public/` are served statically by Vercel. The backend (`api/index.py` -> `framework.py` + `routes.py`) runs as one Python serverless function. Because Vercel has no persistent disk, production data lives in **Turso** (hosted SQLite, same SQL as local; see `db.py`).
 
 1. Push to GitHub. 2. Create a Turso database (Vercel dashboard -> Storage -> Turso). 3. Seed it once from your machine:
-   `TURSO_DATABASE_URL=... TURSO_AUTH_TOKEN=... python3 seed.py --no-demo`
+   `TURSO_DATABASE_URL=... TURSO_AUTH_TOKEN=... python3 seed.py`
 4. Import the repo in Vercel and make sure the two Turso variables are set. Optional: `ESV_API_KEY`.
 
 ## Environment variables

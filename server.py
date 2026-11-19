@@ -7,5 +7,5 @@ import routes  # noqa: F401  (registers routes)
 
 if __name__ == "__main__":
     db.init()
-    if not db.connect().execute("SELECT COUNT(*) FROM users").fetchone()[0]: seed.run()
+    if not db.connect().execute("SELECT COUNT(*) FROM categories").fetchone()[0]: seed.run()
     serve(int(os.environ.get("PORT", "8080")), os.environ.get("HOST", "127.0.0.1"))

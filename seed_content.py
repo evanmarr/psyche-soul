@@ -18,127 +18,14 @@ LABELS = {
  "philosophy": "Philosophical argument", "discussion": "Open discussion",
 }
 
-USERS = [  # username, display, bio
- ("editors", "Psyche & Soul Editorial", "Debate positions are written by the editors, each presented as its best defenders would put it."),
- ("demo", "Demo Reader", "A curious reader exploring Scripture and the mind. This is the shared demo account."),
- ("eleanor_vance", "Dr. Eleanor Vance", "Moral philosopher working on virtue ethics and the emotions. Church elder; slow reader of the Puritans."),
- ("david_okafor", "David Okafor", "Pastor. Twenty years of sitting with people in hard seasons and hard questions. Tries to know where his competence ends."),
- ("sofia_marin", "Sofia Marin", "PhD candidate in philosophy of mind. Interested in consciousness, personal identity and what theology can and cannot say about either."),
- ("jonathan_reeve", "Jonathan Reeve", "Biblical studies. Hebrew and Greek enthusiast, ancient Near Eastern background, allergic to proof-texting."),
- ("amara_lindqvist", "Dr. Amara Lindqvist", "Philosopher of science and medievalist. Epistemology, analogy, and what empirical findings can and cannot settle."),
- ("thomas_ashby", "Thomas Ashby", "Apologist and former skeptic. Believes the best defense of the faith starts with listening to the question."),
- ("rachel_kim", "Rachel Kim", "Seminary student, Reformed tradition, working on a thesis on the doctrine of the image of God."),
- ("marcus_bell", "Marcus Bell", "Retired teacher. Reads Augustine in the mornings and asks questions in the evenings."),
-]
-
 GROUPS = [
- ("reformed-theology", "Reformed Theology", "Covenant, grace, and the confessions. Charitable engagement with the Reformed tradition and its critics.", "cross", "rachel_kim"),
- ("biblical-greek", "Biblical Greek", "Reading the New Testament in Koine. Weekly passages, grammar questions and translation puzzles.", "scroll", "jonathan_reeve"),
- ("christian-apologetics", "Christian Apologetics", "Making a case, hearing the case against, and learning to tell the difference between the two.", "shield", "thomas_ashby"),
- ("philosophy-of-religion", "Philosophy of Religion", "Arguments for and against theism, divine attributes, evil, language and religious experience.", "columns", "sofia_marin"),
- ("ethics-moral-philosophy", "Ethics & Moral Philosophy", "Virtue, duty, consequences and the Christian moral life, read with both the philosophers and the church fathers.", "scale", "amara_lindqvist"),
- ("faith-and-reason", "Faith & Reason", "Honest conversation about doubt, argument and trust, in a charitable setting.", "rings", "david_okafor"),
+ ("reformed-theology", "Reformed Theology", "Covenant, grace, and the confessions. Charitable engagement with the Reformed tradition and its critics.", "cross"),
+ ("biblical-greek", "Biblical Greek", "Reading the New Testament in Koine. Weekly passages, grammar questions and translation puzzles.", "scroll"),
+ ("christian-apologetics", "Christian Apologetics", "Making a case, hearing the case against, and learning to tell the difference between the two.", "shield"),
+ ("philosophy-of-religion", "Philosophy of Religion", "Arguments for and against theism, divine attributes, evil, language and religious experience.", "columns"),
+ ("ethics-moral-philosophy", "Ethics & Moral Philosophy", "Virtue, duty, consequences and the Christian moral life, read with both the philosophers and the church fathers.", "scale"),
+ ("faith-and-reason", "Faith & Reason", "Honest conversation about doubt, argument and trust, in a charitable setting.", "rings"),
 ]
-
-def D(title, body, author, cat, label, tags, hrs, views, comments, group=None, thread=0):
-    return dict(title=title, body=body, author=author, cat=cat, label=label, tags=tags, hrs=hrs, views=views, comments=comments, group=group, thread=thread)
-
-# comments: (author, body, parent_index or None, hours_ago)
-DISCUSSIONS = [
- D("Can a person be at peace without being free of anxiety? Stoic calm and Christian peace",
-   "The Stoics taught that the wise person is free from disturbing passions by judging rightly about what is up to us. Paul tells the Philippians to be anxious for nothing, and promises a peace that passes understanding. Are these the same project? Or does Christian peace allow for grief, fear and compassion in a way Stoic calm does not?\n\nI am especially interested in whether anxiety is best understood as a mistaken judgment, a disordered love, or an appropriate response to a fragile world.",
-   "marcus_bell", "faith-reason", "philosophy", "ethics,ancient", 2, 842, [
-   ("eleanor_vance", "The Stoic claim is that distress comes from false judgments about what is good: if only virtue is good, loss cannot truly harm us. Augustine answers in City of God IX and XIV that Christians do feel fear and grief, but that these feelings, rightly directed, can be signs of love. So the difference is not calm versus turmoil. It is what the calm rests on.", None, 1.9),
-   ("david_okafor", "Context matters for Philippians 4. Paul writes from prison, and the verbs are about what to do with worry: bring it to God with thanksgiving. It is an invitation more than a Stoic technique. And Jesus himself is 'exceeding sorrowful, even unto death' in Gethsemane, so sorrow is not simply a failing.", None, 1.4),
-   ("marcus_bell", "That helps. So Gethsemane tells against any view that the perfect person feels nothing?", 1, 1.1),
-   ("jonathan_reeve", "The Greek (merimnaō) in Matthew 6 is closer to 'anxious striving over provision', and the context is trust in the Father's care for daily needs. It is not a general ban on concern. Paul himself speaks of the daily pressure of his anxiety for all the churches (2 Corinthians 11:28).", 2, 0.8),
-   ("sofia_marin", "Aquinas is worth adding: the passions are not vices. They are movements of the appetite that become virtuous or vicious depending on whether reason and charity order them. That sits between the Stoics, who would remove them, and a view that simply lets feelings rule.", None, 0.5),
-   ("demo", "Thank you all. The idea that emotions can be rightly ordered rather than removed is the most helpful thing I have read on this.", 4, 0.2)]),
- D("How does the doctrine of the soul align with modern philosophy of mind?",
-   "Traditional Christian theology speaks of the soul as a substantial, immaterial reality. Much contemporary philosophy of mind, and neuroscience with it, explains mental life by reference to brain processes. Are these claims in tension, or are they about different things?\n\nI am particularly interested in whether 'soul' is functioning as an explanatory hypothesis or as a statement about what a person is.",
-   "sofia_marin", "mind-soul", "philosophy", "philosophy-of-mind,consciousness", 5, 611, [
-   ("amara_lindqvist", "Speaking as a philosopher of science: the correlations between brain states and mental states are robust and getting more detailed. What those correlations cannot settle by themselves is the metaphysical question of what the mind ultimately is. Empirical work informs that debate, but it does not decide it in either direction.", None, 4.5),
-   ("rachel_kim", "Within Christian anthropology there is a range: substance dualism (Descartes, Swinburne), hylomorphism (Aquinas), and non-reductive physicalism (Nancey Murphy and others). The Hebrew nephesh is arguably the whole living person, which some take as support for a more holistic view.", 0, 4.0),
-   ("thomas_ashby", "I would add that the intermediate state question presses on this: if Paul expects to be 'with Christ' before the resurrection, that is a datum any view has to handle. Dualists and physicalists have both offered proposals.", 1, 3.2),
-   ("sofia_marin", "Right, and for what it's worth I think the strongest versions of each position don't depend on losing the argument about neuroscience. They depend on prior arguments about consciousness and personal identity.", None, 2.0)]),
- D("The problem of meaning: Ecclesiastes, Camus and the search for purpose",
-   "Albert Camus called the question whether life is worth living the fundamental question of philosophy, and answered by embracing the absurd. Ecclesiastes asks 'what do people gain from all their toil?' and its answer is not simple. What do the Preacher and the philosophers have to say to each other about meaning?",
-   "david_okafor", "human-nature", "theory", "existentialism,ethics", 8, 402, [
-   ("eleanor_vance", "Camus's The Myth of Sisyphus concludes that we must imagine Sisyphus happy: meaning is made in the revolt, not found. That is a philosophical proposal. Its rival, that meaning is received as a gift, is where Ecclesiastes ends. It helps to say which claim is doing the work.", None, 7.2),
-   ("jonathan_reeve", "Ecclesiastes keeps returning to 'hevel', often translated vanity, literally breath or vapor. The Preacher is exploring what survives death and what cannot be grasped. Yet he lands on receiving gifts of food, work and companionship as from God's hand (2:24, 9:7-10). It is a meaning that does not come from mastering life.", None, 6.5),
-   ("marcus_bell", "My experience as a teacher is that the students who struggled most were not short of ability but of a reason to care. The Preacher might have understood them.", 1, 5.0)]),
- D("What does the 'image of God' mean for how we think about persons?",
-   "Genesis 1:27 grounds human dignity in the image of God. Theologians debate whether the image is structural (reason, will), relational (communion) or functional (representing God's rule). Does any of that bear on how philosophers think about personhood?",
-   "rachel_kim", "human-nature", "theology", "image-of-god,personality", 20, 355, [
-   ("jonathan_reeve", "In the ancient Near East, kings set up statues as images representing their rule. Many scholars read Genesis 1 as democratizing that idea: every human, not just the king, represents God on earth. That reading leans functional, but doesn't exclude relational aspects (the 'male and female' clause).", None, 18),
-   ("eleanor_vance", "For ethics, a practical implication is dignity: a person's worth is not contingent on their abilities or usefulness. That is a theological commitment more than a philosophical derivation, but it shapes how many Christian philosophers approach bioethics and human rights.", None, 16)]),
- D("Testimony as a source of knowledge: Hume, Reid and the Gospels",
-   "David Hume argued that we should believe testimony only in proportion to our experience of its reliability, and that reports of miracles fail that test. Thomas Reid answered that trusting testimony is a natural and rational default. How does this debate bear on the eyewitness traditions behind the Gospels? I want to avoid overclaiming in either direction.",
-   "thomas_ashby", "apologetics", "philosophy", "epistemology", 26, 698, [
-   ("amara_lindqvist", "Hume's argument in Of Miracles (section X of the Enquiry Concerning Human Understanding) has been called circular by some critics and defended by others. It is worth reading the actual text, since it is more careful than its reputation.", None, 24),
-   ("jonathan_reeve", "Richard Bauckham's 'Jesus and the Eyewitnesses' argues that the Gospels preserve eyewitness testimony. People can disagree with his conclusions, but it is a good example of engaging epistemology and history together.", 0, 22),
-   ("eleanor_vance", "Applying a general theory of testimony to ancient texts is an extrapolation, and we should label it as such. It can show what standard of evidence is reasonable. It cannot settle particular historical claims.", None, 20)]),
- D("Practical rhythms for reading Scripture in a season of doubt",
-   "Peer discussion. I am in a dry season, sustained reading feels impossible, and honest questions keep rising. What has helped you keep a small, honest connection with Scripture without turning it into another source of guilt?",
-   "marcus_bell", "faith-reason", "discussion", "epistemology", 30, 520, [
-   ("david_okafor", "Shrink it. A Psalm of lament, read slowly, a few verses a day. The Psalms give words to people who have none, and a third of them are complaints. Doubt voiced to God is still addressed to God.", None, 29),
-   ("rachel_kim", "Listening to Scripture read aloud was easier for me than reading during a hard stretch. An audio Bible during a walk counted.", None, 27),
-   ("eleanor_vance", "Philosophers have long separated doubt that is hostile from doubt that is seeking. Augustine and Anselm both pray their questions. 'Faith seeking understanding' gives permission to keep asking while you keep praying.", None, 26)]),
- D("Self-deception, weakness of will and sanctification",
-   "Aristotle asked how a person can know what is good and still fail to do it (akrasia). Paul writes, 'the good that I would I do not.' Augustine describes a divided will in his Confessions. Can philosophical accounts of self-deception and weakness of will help us think about repentance and sanctification? Where do they fall short?",
-   "eleanor_vance", "philosophy", "theory", "ethics,ancient", 36, 301, [
-   ("david_okafor", "I think of James 1:22-25 and the person who looks in a mirror and forgets what he saw. Self-justification is a deeply human move. The gospel invites a different response: not 'excuse it' but 'bring it into the light and receive mercy'.", None, 34),
-   ("sofia_marin", "Worth noting that Aristotle and Augustine disagree about the remedy: Aristotle looks to habituation, Augustine to grace healing a wounded will. Using one as a metaphor for the other is fine, but we should not claim either one explains conversion.", None, 33)]),
- D("Is philosophy a servant of theology or a partner?",
-   "Tertullian: 'What has Athens to do with Jerusalem?' Aquinas: grace perfects nature. Where do you land and why?",
-   "sofia_marin", "philosophy", "philosophy", "philosophy-of-religion", 40, 289, [
-   ("rachel_kim", "Calvin and Aquinas disagree on how much natural reason can establish, but both use philosophical tools constantly. The real question is which philosophical commitments get smuggled in unexamined.", None, 38),
-   ("marcus_bell", "I'm a layman and I find the Athens question easier to hold when I remember that Paul quotes Greek poets on the Areopagus (Acts 17:28).", None, 36)]),
- D("Reading Romans 7: is Paul describing a believer or a pre-conversion struggle?",
-   "A classic dispute. Augustine's later view and the Reformers read it as a believer; many earlier Fathers and some modern scholars read it as a person under the law, outside Christ. How do you weigh the tense shifts and the Romans 8 context?",
-   "jonathan_reeve", "biblical-interpretation", "theology", "romans,hermeneutics", 48, 760, [
-   ("rachel_kim", "The present tense in 7:14-25 and the sincere delight in God's law (7:22) push me toward a believer. But Romans 7:14's 'sold under sin' sits oddly with Romans 6.", None, 46),
-   ("thomas_ashby", "I find the rhetorical 'I' view persuasive: Paul uses 'I' to portray Israel (or humanity) under the Law. Context matters more than tense here.", None, 45),
-   ("jonathan_reeve", "Good. Whatever one concludes, the passage is clearly not merely a report of inner experience; it's an argument about the Law's inability to deliver life.", 1, 44)]),
- D("What does it mean to call God 'Father'? Analogy and religious language",
-   "Aquinas held that words like 'good' and 'father' apply to God by analogy: neither in exactly the same sense as with creatures, nor in a completely different sense. Others hold that such language is metaphor. What is settled about how religious language works, and what is still contested?",
-   "amara_lindqvist", "philosophy-of-religion", "philosophy", "philosophy-of-religion,medieval", 55, 410, [
-   ("eleanor_vance", "In Summa Theologiae I.13, Aquinas rejects both univocal and equivocal predication and argues for analogy. Later debates (Scotus, Ockham) pushed on whether analogy is really coherent. It is a live discussion, not a settled one.", None, 52),
-   ("david_okafor", "Pastorally, this reminds me not to assume that someone's difficulty with 'Father' is a spiritual defect. Sometimes the word carries something painful, and the analogy needs to be explained, not just asserted.", 0, 50)]),
- D("What is forgiveness? Justice, mercy and moral philosophy",
-   "Forgiveness is central to Christian ethics and has long been a topic for philosophers such as Joseph Butler. What does forgiving someone involve, and how should Christians think about forgiveness that does not erase justice or safety?",
-   "eleanor_vance", "faith-reason", "philosophy", "ethics", 70, 333, [
-   ("david_okafor", "Forgiveness is not reconciliation and not the denial of harm. In situations of abuse, pressure to quickly forgive and restore the relationship can be dangerous. Both Scripture and sound moral reasoning distinguish them.", None, 66),
-   ("eleanor_vance", "Butler's sermons on resentment and forgiveness distinguish forgiving from condoning or forgetting: resentment can be legitimate, but it must be bounded by goodwill. Charles Griswold has developed this into an account of what forgiveness asks of both the wrongdoer and the wronged.", 0, 64)]),
- D("Welcome! Introduce yourself and what you hope to explore",
-   "Psyche & Soul is a place for careful, charitable conversation about faith, philosophy and meaning. Say hello, tell us what you're curious about, and read the community guidelines before diving in.",
-   "david_okafor", "general", "discussion", "welcome", 120, 940, [
-   ("demo", "Hello everyone. I'm a reader first and a talker second. Looking forward to the Bible reader and the debates.", None, 100),
-   ("marcus_bell", "Welcome! Start with the debates page: seeing both cases laid out side by side is the best way to learn the ground here.", 0, 98)]),
- D("Lament and the problem of evil: what Job and the Psalms teach",
-   "Roughly a third of the Psalms are laments, and Job argues with God for chapters. What does that tradition teach about honest speech to God, and how does it differ from the philosophical project of a theodicy?",
-   "rachel_kim", "faith-reason", "theology", "psalms,philosophy-of-religion", 90, 266, [
-   ("eleanor_vance", "Philosophers tend to ask 'why does God permit this?', while Job asks 'where is God in this?'. The book ends not with an explanation but with an encounter. That suggests the biblical answer to suffering is not primarily a theory, though it does not rule theory out.", None, 88)]),
- D("Cartesian dualism: what did Descartes get right and wrong?",
-   "A starting point for the group discussion. Interaction problem aside, why did the 'mind as separate substance' view dominate for so long, and what resources does the tradition have beyond Descartes?",
-   "sofia_marin", "mind-soul", "philosophy", "philosophy-of-mind,consciousness", 100, 217, [
-   ("rachel_kim", "Aquinas's hylomorphism is not Cartesian, soul as the form of the body rather than a ghost in a machine. Many contemporary Christian philosophers find it a better home.", None, 96)], group="philosophy-of-religion"),
- D("Weekly passage: Romans 8:1-11, flesh and Spirit in Paul's Greek",
-   "This week's reading. Let us look at the contrast between sarx and pneuma and at the force of 'no condemnation' (katakrima). What stands out?",
-   "jonathan_reeve", "biblical-interpretation", "discussion", "romans,greek", 30, 144, [
-   ("rachel_kim", "katakrima is the sentence following judgment, not just guilt feelings. That nuance changes the verse's force.", None, 28)], group="biblical-greek"),
- D("Virtue ethics primer: Aristotle, Aquinas and the Christian virtues",
-   "A short primer for the group on Aristotle's account of virtue as a settled habit of choice, how Aquinas adds the theological virtues of faith, hope and charity, and why the Christian tradition insists that moral growth is not something we manage on our own.",
-   "amara_lindqvist", "philosophy", "research", "ethics,medieval", 50, 190, [
-   ("eleanor_vance", "Good primer. One addition: Aristotle's virtue ethics assumes a community of formation, which is partly why the church has taken it up so naturally.", None, 48)], group="ethics-moral-philosophy"),
- D("Weekly check-in: what are you reading?",
-   "A low-pressure space. Share one thing you are reading (philosophy, theology or Scripture) and one question it raised.",
-   "david_okafor", "faith-reason", "discussion", "reading", 18, 160, [
-   ("marcus_bell", "Reading Augustine's Confessions, Book VIII. The divided will is hitting close to home. Question: is Augustine's account of the will compatible with Aristotle's?", None, 16)], group="faith-and-reason"),
-]
-
-# Debates: none are pre-made. Users propose debates and add arguments from the site.
-DEBATES = []
 
 # Library: type, category, title, author, label, tags, minutes, summary, body
 ARTICLES = [

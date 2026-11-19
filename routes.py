@@ -576,7 +576,8 @@ def group(r):
     g = r.db.execute(GROUP_SQL + " WHERE g.slug=?", (r.uid, r.params["slug"])).fetchone()
     if not g: raise HTTPError(404, "Group not found.")
     out = _group_card(r, g)
-    out["owner"] = r.db.execute("SELECT username FROM users WHERE id=?", (g["owner_id"],)).fetchone()["username"]
+    o = r.db.execute("SELECT username FROM users WHERE id=?", (g["owner_id"],)).fetchone() if g["owner_id"] else None
+    out["owner"] = o["username"] if o else None
     out["member_list"] = [{"username": m["username"], "name": m["display_name"], "avatar": m["avatar"], "owner": m["id"] == g["owner_id"]}
                           for m in r.db.execute("SELECT u.* FROM group_members m JOIN users u ON u.id=m.user_id WHERE m.group_id=? ORDER BY m.joined_at", (g["id"],))]
     out["items"] = _discussion_rows(r, "WHERE d.group_id=?", (g["id"],), "active", 50)
