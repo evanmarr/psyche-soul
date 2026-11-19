@@ -51,7 +51,8 @@ page("/debates/:id", async ({ id }) => {
     <p class="crumbs"><a href="#/debates">Debates</a> / ${d.cname}</p>
     <header class="dhead"><span class="eyebrow">${d.cname} &middot; ${d.entries.length} arguments</span><h1>${d.title}</h1>
       <p class="question"><span>The question</span>${d.question}</p><p class="lede">${d.summary}</p>
-      <div class="row gap wrap">${bmBtn("debate", d.id, d.bookmarked)}<button class="btn primary" data-act="contribute">${icon("plus")} Add an argument</button></div></header>
+      ${d.proposer ? html`<p class="muted small">Proposed by <a class="who-link" href="#/u/${d.proposer.username}">${d.proposer.name}</a></p>` : ""}
+      <div class="row gap wrap">${bmBtn("debate", d.id, d.bookmarked)}<button class="btn primary" data-act="contribute">${icon("plus")} Add an argument</button>${d.can_edit ? html`<button class="btn" data-act="edit-debate">${icon("pencil")} Edit debate</button>` : ""}</div></header>
     <div class="positions"><div class="pos aff"><span class="eyebrow">Affirmative</span><h3>${d.aff_label}</h3><p>${d.aff_summary}</p></div><div class="vsbadge">vs</div><div class="pos opp"><span class="eyebrow">Opposing</span><h3>${d.opp_label}</h3><p>${d.opp_summary}</p></div></div>
     <h2 class="sec">Opening arguments</h2>${col("opening")}
     <h2 class="sec">Rebuttals</h2>${col("rebuttal")}
@@ -67,6 +68,21 @@ page("/debates/:id", async ({ id }) => {
     ${commentsSection("debate", d.id, d.comments)}
   </article>`, mount() { window._debate = d; } };
 });
+ACT["edit-debate"] = () => {
+  const d = window._debate; if (!d || !d.can_edit) return;
+  const inp = (n, l, max) => html`<label>${l}<input name="${n}" required maxlength="${max}" value="${d[n]}"></label>`;
+  const area = (n, l, rows, max) => html`<label>${l}<textarea name="${n}" rows="${rows}" required maxlength="${max}">${d[n]}</textarea></label>`;
+  openModal(html`<div class="row between"><h2>Edit debate</h2><button class="icon-btn" data-act="close-modal" aria-label="Close">${icon("x")}</button></div>
+  <form class="form" data-form="editdebate">${inp("title", "Topic", 160)}${area("question", "Central question", 2, 400)}
+    <label>Category<select name="category">${S.cats.map(c => html`<option value="${c.slug}" ${c.slug === d.category ? "selected" : ""}>${c.name}</option>`)}</select></label>
+    ${area("summary", "Why it matters", 3, 800)}
+    <div class="grid2"><div>${inp("aff_label", "Affirmative position (short name)", 60)}${area("aff_summary", "Affirmative case", 3, 600)}</div><div>${inp("opp_label", "Opposing position (short name)", 60)}${area("opp_summary", "Opposing case", 3, 600)}</div></div>
+    <p class="form-err" id="ed-err"></p><div class="row end gap"><button type="button" class="btn" data-act="close-modal">Cancel</button><button class="btn primary">Save changes</button></div></form>`, { wide: true });
+};
+FORM.editdebate = async (f, data) => {
+  try { await api("/debates/" + window._debate.id, { method: "PUT", body: data }); closeModal(); toast("Debate updated", "ok"); rerender(); }
+  catch (e) { $("#ed-err").textContent = e.message; }
+};
 FORM.vote = async (f, d) => {
   if (!S.user) return openAuth();
   const r = await api(`/debates/${f.dataset.id}/vote`, { method: "POST", body: { side: d.side, moved: !!d.moved } });

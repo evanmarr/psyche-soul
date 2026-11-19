@@ -477,6 +477,10 @@ def debate(r):
     did = int(r.params["id"]) if r.params["id"].isdigit() else 0
     d = one(r.db.execute("SELECT d.*, c.name cname FROM debates d JOIN categories c ON c.slug=d.category WHERE d.id=?", (did,)))
     if not d: raise HTTPError(404, "Debate not found.")
+    owner = r.db.execute("SELECT username, display_name FROM users WHERE id=?", (d["author_id"],)).fetchone() if d.get("author_id") else None
+    d["proposer"] = {"username": owner["username"], "name": owner["display_name"]} if owner else None
+    d["can_edit"] = bool(r.user and d.get("author_id") == r.uid)
+    d.pop("author_id", None)
     d["entries"] = []
     for e in r.db.execute(f"SELECT e.*,{AUTHOR_COLS} FROM debate_entries e JOIN users u ON u.id=e.author_id WHERE e.debate_id=? ORDER BY e.created_at", (did,)):
         vs = [{"label": bible.ref_label(b, ch, v, ve), "book": bible.BOOKS[b]["slug"], "chapter": ch, "verse": v, "text": " ".join(bible.verse_text(b, ch, x) for x in range(v, (ve or v) + 1))}
@@ -492,14 +496,28 @@ def debate(r):
 
 @route("POST", "/api/debates")
 def create_debate(r):
-    r.need_user()
+    r.need_user(); f, cat = _debate_fields(r)
+    t = db.now()
+    cur = r.db.execute("INSERT INTO debates(title,question,summary,category,aff_label,opp_label,aff_summary,opp_summary,created_at,last_activity,author_id) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                       (f["title"], f["question"], f["summary"], cat, f["aff_label"], f["opp_label"], f["aff_summary"], f["opp_summary"], t, t, r.uid))
+    return {"id": cur.lastrowid}
+
+def _debate_fields(r):
     f = {k: r.field(k, lo, hi) for k, lo, hi in (("title", 8, 160), ("question", 10, 400), ("summary", 20, 800), ("aff_label", 2, 60), ("opp_label", 2, 60), ("aff_summary", 20, 600), ("opp_summary", 20, 600))}
     cat = r.body.get("category", "")
     if not r.db.execute("SELECT 1 FROM categories WHERE slug=?", (cat,)).fetchone(): raise HTTPError(400, "Please choose a category.")
-    t = db.now()
-    cur = r.db.execute("INSERT INTO debates(title,question,summary,category,aff_label,opp_label,aff_summary,opp_summary,created_at,last_activity) VALUES(?,?,?,?,?,?,?,?,?,?)",
-                       (f["title"], f["question"], f["summary"], cat, f["aff_label"], f["opp_label"], f["aff_summary"], f["opp_summary"], t, t))
-    return {"id": cur.lastrowid}
+    return f, cat
+
+@route("PUT", "/api/debates/<id>")
+def edit_debate(r):
+    r.need_user(); did = int(r.params["id"]) if r.params["id"].isdigit() else 0
+    d = r.db.execute("SELECT author_id FROM debates WHERE id=?", (did,)).fetchone()
+    if not d: raise HTTPError(404, "Debate not found.")
+    if not d["author_id"] or d["author_id"] != r.uid: raise HTTPError(403, "Only the person who proposed a debate can edit it.")
+    f, cat = _debate_fields(r)
+    r.db.execute("UPDATE debates SET title=?,question=?,summary=?,category=?,aff_label=?,opp_label=?,aff_summary=?,opp_summary=? WHERE id=?",
+                 (f["title"], f["question"], f["summary"], cat, f["aff_label"], f["opp_label"], f["aff_summary"], f["opp_summary"], did))
+    return {"id": did}
 
 @route("POST", "/api/debates/<id>/entries")
 def debate_entry(r):

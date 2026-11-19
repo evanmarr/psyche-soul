@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS plan_progress(user_id INTEGER NOT NULL REFERENCES use
   PRIMARY KEY(user_id,plan_id));
 CREATE TABLE IF NOT EXISTS debates(id INTEGER PRIMARY KEY, title TEXT NOT NULL, question TEXT NOT NULL, summary TEXT NOT NULL,
   category TEXT NOT NULL, aff_label TEXT NOT NULL, opp_label TEXT NOT NULL, aff_summary TEXT NOT NULL, opp_summary TEXT NOT NULL,
-  created_at INTEGER NOT NULL, last_activity INTEGER NOT NULL);
+  created_at INTEGER NOT NULL, last_activity INTEGER NOT NULL, author_id INTEGER REFERENCES users(id));
 CREATE TABLE IF NOT EXISTS debate_entries(id INTEGER PRIMARY KEY, debate_id INTEGER NOT NULL REFERENCES debates(id) ON DELETE CASCADE,
   side TEXT NOT NULL, kind TEXT NOT NULL, author_id INTEGER NOT NULL REFERENCES users(id), body TEXT NOT NULL,
   verses TEXT NOT NULL DEFAULT '[]', refs TEXT NOT NULL DEFAULT '[]', created_at INTEGER NOT NULL);
@@ -141,10 +141,18 @@ def connect():
     c.execute("PRAGMA foreign_keys=ON")
     return c
 
+def migrate(c):
+    """Upgrade databases created by an older version (safe to run every time)."""
+    cols = [r["name"] for r in c.execute("PRAGMA table_info(debates)").fetchall()]
+    if cols and "author_id" not in cols:
+        c.execute("ALTER TABLE debates ADD COLUMN author_id INTEGER REFERENCES users(id)")
+    # Debates made before authors were recorded belong to the only registered user, if there is exactly one.
+    c.execute("UPDATE debates SET author_id=(SELECT id FROM users) WHERE author_id IS NULL AND (SELECT COUNT(*) FROM users)=1")
+
 def init():
     if REMOTE:
-        c = connect(); c.executescript(SCHEMA); c.close(); return
+        c = connect(); c.executescript(SCHEMA); migrate(c); c.close(); return
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    c = connect(); c.execute("PRAGMA journal_mode=WAL"); c.executescript(SCHEMA); c.commit(); c.close()
+    c = connect(); c.execute("PRAGMA journal_mode=WAL"); c.executescript(SCHEMA); migrate(c); c.commit(); c.close()
 
 def now(): return int(time.time())
