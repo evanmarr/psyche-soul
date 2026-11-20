@@ -202,7 +202,7 @@ function requireLogin(title = "Sign in to continue") {
 
 /* ---------- auth ---------- */
 function openAuth(mode = "login") {
-  openModal(html`<div class="auth-head"><img src="/img/logo.svg" width="44" height="44" alt=""><h2>${mode === "login" ? "Welcome back" : "Join Psyche & Soul"}</h2></div>
+  openModal(html`<div class="auth-head"><img class="auth-logo" src="/img/logo.png" height="56" alt=""><h2>${mode === "login" ? "Welcome back" : "Join Psyche & Soul"}</h2></div>
     <div class="tabs small" role="tablist"><button class="tab ${mode === "login" ? "on" : ""}" data-act="auth" data-mode="login">Sign in</button><button class="tab ${mode === "register" ? "on" : ""}" data-act="auth" data-mode="register">Create account</button></div>
     ${mode === "login" ? html`
     <form data-form="login" class="form"><label>Username or email<input name="username" autocomplete="username" required></label>
