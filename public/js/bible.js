@@ -31,7 +31,7 @@ page("/bible/:book/:ch", async ({ book, ch }, q) => {
   if (!S.translations.find(t => t.id === B.tr)) B.tr = "web";
   let d;
   try { d = await api(`/bible/passage${qs({ book, chapter: ch, tr: B.tr })}`); }
-  catch (e) { throw e; }
+  catch (e) { if (e.status !== 0 && e.status !== 503) throw e; d = await OFFLINE.passage(b, +ch, B.tr); if (!d) throw e; }
   CUR = d; SEL.clear();
   const notesBy = {}; d.notes.forEach(n => (notesBy[n.verse] = notesBy[n.verse] || []).push(n));
   const bm = new Set(d.bookmarks);
@@ -49,6 +49,7 @@ page("/bible/:book/:ch", async ({ book, ch }, q) => {
     </div>
     <article class="reader ${B.font}" style="--fs:${B.size}px">
       <header class="rhead"><span class="rbook">${b.name}</span><h1>Chapter ${ch}</h1><span class="rtr">${S.translations.find(t => t.id === B.tr)?.full || ""}</span></header>
+      ${d.offline ? html`<div class="note-box warn">${icon("info")}<p>Reading the copy saved on this device. Highlights and notes will return when you are back online.</p></div>` : ""}
       <div class="bible-text" id="btext">${verses}</div>
       <p class="copyright">${B.tr === "kjv" ? "King James Version (public domain)." : "World English Bible (public domain)."} Both translations are free to use and copy.</p>
       <nav class="chnav">${d.prev ? html`<a class="btn" href="#/bible/${d.prev.book}/${d.prev.chapter}">${icon("left")} ${d.prev.name} ${d.prev.chapter}</a>` : html`<span></span>`}
@@ -78,7 +79,7 @@ updateSelBar = reset => {
     <button data-act="sel-copy" title="Copy">${icon("copy")}<span>Copy</span></button><button data-act="sel-quote" title="Copy as quote">${icon("quote")}<span>Quote</span></button>
     <span class="swatches" role="group" aria-label="Highlight">${COLORS.map(c => html`<button class="sw hl-${c}" data-act="sel-hl" data-color="${c}" aria-label="Highlight ${c}"></button>`)}<button class="sw none" data-act="sel-hl" data-color="" aria-label="Remove highlight" title="Remove highlight">${icon("x")}</button></span>
     <button data-act="sel-note" title="Add a note">${icon("pencil")}<span>Note</span></button><button data-act="sel-bm" title="Bookmark">${icon("bookmark")}<span>Save</span></button>
-    <button data-act="sel-discuss" title="Start a discussion">${icon("chat")}<span>Discuss</span></button><button class="x" data-act="sel-clear" aria-label="Clear selection">${icon("x")}</button></div>`.s;
+    <button data-act="sel-poster" title="Make a poster of this verse">${icon("sparkle")}<span>Poster</span></button><button data-act="sel-discuss" title="Start a discussion">${icon("chat")}<span>Discuss</span></button><button class="x" data-act="sel-clear" aria-label="Clear selection">${icon("x")}</button></div>`.s;
   hydrateIcons(bar);
 };
 ACT.verse = el => { const n = +el.dataset.v; SEL.has(n) ? SEL.delete(n) : SEL.add(n); paintSel(); };
@@ -104,6 +105,10 @@ ACT["sel-bm"] = async () => {
   if (!S.user) return openAuth(); const has = new Set(CUR.bookmarks); const vs = [...SEL]; const allOn = vs.every(v => has.has(v));
   for (const v of vs) if (allOn === has.has(v)) await api("/bookmarks", { method: "POST", body: { kind: "verse", ref: `${CUR.book.id}:${CUR.chapter}:${v}` } });
   toast(allOn ? "Bookmarks removed" : "Saved to your bookmarks", allOn ? "" : "ok"); rerender();
+};
+ACT["sel-poster"] = () => {
+  const vs = [...SEL].sort((a, b) => a - b), lo = vs[0], hi = Math.min(vs[vs.length - 1], lo + 11);
+  go(`#/poster/${CUR.book.slug}/${CUR.chapter}${qs({ v: hi > lo ? `${lo}-${hi}` : lo, tr: CUR.translation })}`);
 };
 ACT["sel-discuss"] = () => {
   if (!S.user) return openAuth();

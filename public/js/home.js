@@ -15,7 +15,7 @@ ACT["votd-bm"] = async el => {
   el.classList.toggle("on", d.bookmarked); el.setAttribute("aria-pressed", d.bookmarked); toast(d.bookmarked ? "Verse saved" : "Removed from bookmarks", d.bookmarked ? "ok" : "");
 };
 page("/", async () => {
-  const [list, votd, deb, lib, prog] = await Promise.all([homeList("all"), api("/votd"), api("/debates"), api("/library"), S.user ? api("/progress").catch(() => null) : null]);
+  const [list, votd, deb, lib, prog, vom] = await Promise.all([homeList("all"), api("/votd"), api("/debates"), api("/library"), S.user ? api("/progress").catch(() => null) : null, api("/verse-of-month").catch(() => null)]);
   const quick = [["book", "Read the Bible", "WEB · KJV · Annotate · Quote", "#/bible", "feature"], ["chat", "Join a Discussion", "Theology · Philosophy · More", "#/forums"], ["scale", "Debate a Topic", "Structured · Civil · In-Depth", "#/debates"], ["layers", "Explore the Library", "Articles · Resources · Essays", "#/library"]];
   const feat = deb.items[0] || null;
   return { title: "", html: html`
@@ -28,9 +28,12 @@ page("/", async () => {
     <section class="panel recent"><header class="phead2"><h2>Recent Discussions</h2><div class="fchips" id="hfilters">${HOME_FILTERS.map(([k, l], i) => html`<button class="fchip ${i === 0 ? "on" : ""}" data-act="home-filter" data-f="${k}">${l}</button>`)}</div></header>
       <div class="list flat" id="hlist">${list}</div><footer class="pfoot"><a class="link" href="#/forums">Browse all discussions ${icon("right")}</a></footer></section>
     <aside class="side-col">
+      ${vom ? html`<section class="panel vom-card"><header class="phead2"><h2>${icon("sparkle")} Verse of the Month</h2><span class="muted small">${vom.month_name}</span></header>
+        <a class="vom-link" href="#/verse" aria-label="${vom.label}: open the Verse of the Month page"><canvas id="home-poster" class="poster-canvas" width="540" height="675"></canvas></a>
+        <div class="row between vom-foot"><span><b>${vom.theme}</b><br><span class="muted small">${vom.label}</span></span><a class="btn primary sm" href="#/verse">Memorize it</a></div></section>` : ""}
       <section class="panel votd"><header class="phead2"><h2>${icon("book")} Verse of the Day</h2><button class="icon-btn bm ${votd.bookmarked ? "on" : ""}" data-act="votd-bm" data-ref="${votd.ref}" aria-pressed="${votd.bookmarked}" aria-label="Bookmark this verse">${icon("bookmark")}</button></header>
         <p class="vref"><a href="#/bible/${votd.book}/${votd.chapter}?v=${votd.verse}">${votd.label}</a> <span>(${votd.translation})</span></p><blockquote class="vtext">&ldquo;${votd.text}&rdquo;</blockquote>
-        <a class="link" href="#/bible/${votd.book}/${votd.chapter}?v=${votd.verse}">Read the chapter ${icon("right")}</a></section>
+        <div class="row gap votd-links"><a class="link" href="#/bible/${votd.book}/${votd.chapter}?v=${votd.verse}">Read the chapter ${icon("right")}</a><a class="link" href="#/poster/${votd.book}/${votd.chapter}?v=${votd.verse}">Make a poster ${icon("sparkle")}</a></div></section>
       <section class="panel reading"><header class="phead2"><h2>${icon("book")} Your Reading</h2></header>
         ${!S.user ? html`<p class="muted">Sign in to track your reading progress and pick up where you left off.</p><button class="btn primary" data-act="auth">Sign in</button>`
         : prog && prog.current ? html`<div class="rrow"><b>${prog.current.name}</b><span class="muted">${prog.current.read} of ${prog.current.chapters} chapters</span></div><div class="prog"><i style="width:${Math.round(prog.current.read / prog.current.chapters * 100)}%"></i></div>
@@ -45,5 +48,6 @@ page("/", async () => {
       <div class="list flat">${lib.items.slice(0, 3).map(a => html`<a class="hrow col" href="#/library/${a.id}"><b>${a.title}</b><span class="muted">${typeNames[a.type]} &middot; ${a.author}</span></a>`)}</div></section>
   </div>
   <section class="topics-strip"><h2 class="sec">Explore topics</h2><div class="chips wrapchips">${S.cats.map(c => html`<a class="chip" href="#/topic/${c.slug}">${icon(c.icon)} ${c.name}</a>`)}</div></section>
-  <footer class="site-foot"><span>Psyche &amp; Soul &mdash; thoughtful, charitable, evidence-based conversation.</span><span><a href="#/guidelines">Community guidelines</a></span></footer>` };
+  <footer class="site-foot"><span>Psyche &amp; Soul &mdash; thoughtful, charitable, evidence-based conversation.</span><span><a href="#/guidelines">Community guidelines</a></span></footer>`,
+    mount() { if (vom) Poster.draw($("#home-poster"), { text: vom.text, ref: vom.label, style: vom.style, seed: vom.label }, 540); } };
 });

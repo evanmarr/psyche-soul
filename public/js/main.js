@@ -18,7 +18,7 @@ function renderChrome() {
     <div class="divider"></div><h3 class="eyebrow side-h">Topics</h3>
     <nav class="sidenav topics" aria-label="Topics">${SIDE_TOPICS.map(s => { const c = S.cats.find(x => x.slug === s); return c ? `<a href="#/topic/${s}" data-topic="${s}">${icon(c.icon).s}<span>${esc(c.name)}</span></a>` : ""; }).join("")}
     <a href="#/topics">${icon("infinity").s}<span>More Topics...</span></a></nav>
-    <div class="side-foot"><a href="#/guidelines">Community guidelines</a></div>`;
+    <div class="side-foot"><a href="#/verse">Verse of the Month</a><a href="#/app">Get the app (works offline)</a><a href="#/guidelines">Community guidelines</a></div>`;
   const acct = $("#account");
   acct.innerHTML = S.user ? `<div class="acct"><button class="avatar-btn" data-act="acct-menu" aria-label="Account menu" aria-haspopup="menu">${avatar(S.user, 38).s}</button></div>` : `<button class="btn primary sm" data-act="auth">Sign in</button>`;
   const dot = $("#bell-dot"); dot.hidden = !(S.user && S.unread > 0); $(".bell").hidden = !S.user;
@@ -62,13 +62,17 @@ FORM.search = (f, d) => { const q = (d.q || "").trim(); if (q.length < 2) { toas
 document.addEventListener("click", e => { if (e.target.closest("#sidebar a, .scrim")) document.body.classList.remove("menu-open"); });
 document.addEventListener("keydown", e => { if (e.key === "/" && !e.target.closest("input,textarea,select") && !e.metaKey) { e.preventDefault(); $("#q").focus(); } });
 
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => { }));
+window.addEventListener("offline", () => toast("You are offline. Pages you have opened, and any downloaded Bible, still work."));
+window.addEventListener("online", () => toast("Back online.", "ok"));
+
 (async function boot() {
   hydrateIcons();
   const exit = document.createElement("button"); exit.className = "exit-reading"; exit.dataset.act = "unfocus"; exit.innerHTML = icon("x").s + " Exit reading mode"; document.body.append(exit);
   try {
     const [b, c] = await Promise.all([api("/bible/books"), api("/categories")]);
     S.books = b.books; S.translations = b.translations; S.cats = c.items;
-    await loadMe();
+    try { await loadMe(); } catch (e) { if (e.status !== 0 && e.status !== 503) throw e; S.user = null; renderChrome(); toast("You are offline. Showing what is saved on this device."); }
   } catch (e) { $("#view").innerHTML = `<div class="empty big"><h1>Cannot reach the server</h1><p>${esc(e.message)}</p></div>`; return; }
   route();
   setInterval(async () => { if (S.user && !document.hidden) { try { const d = await api("/me"); if (d.unread !== S.unread) { S.unread = d.unread; $("#bell-dot").hidden = !S.unread; } } catch { } } }, 60000);

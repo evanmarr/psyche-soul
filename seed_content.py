@@ -141,3 +141,19 @@ STUDY_PATHS = [
          ("library", "Orthodoxy", "", "Chesterton on why he found Christianity more reasonable and more adventurous than its rivals."),
          ("reflect", "", "Pause and reflect", "What kind of evidence do you find persuasive, and does the way you weigh it match how you weigh other things you trust?")]),
 ]
+
+# Verse of the Month: one passage to memorize each calendar month. `style` picks the poster design (see public/js/poster.js).
+VERSES_OF_MONTH = [
+ (1, "Proverbs 3:5-6", "midnight", "Trust", "Where do you tend to lean on your own understanding? Begin the year by naming it."),
+ (2, "1 Peter 1:22", "blush", "Love", "Peter joins a purified life to sincere love: love is practiced, not only felt."),
+ (3, "Psalm 139:14", "watercolor", "Made by God", "David praises the God who knows him completely. Human dignity starts here."),
+ (4, "Job 5:8", "sunset", "Seeking God", "A caution worth knowing: these are the words of Eliphaz, whom God later says spoke wrongly about Job (Job 42:7). The instinct to bring our cause to God is sound, but read the whole book before building on one line."),
+ (5, "Romans 12:2", "meadow", "A renewed mind", "Renewal of the mind comes before the transformation of life. What are you feeding your mind this month?"),
+ (6, "Philippians 4:6-7", "dawn", "Peace", "Paul writes from prison. The instruction is about what to do with worry: bring it to God with thanks."),
+ (7, "Micah 6:8", "sunset", "Justice and mercy", "A one-verse summary of what a good life asks of us, in the prophet's own words."),
+ (8, "Psalm 46:10", "midnight", "Stillness", "Be still and know. The verse is a call to trust, spoken in the middle of upheaval."),
+ (9, "Joshua 1:9", "meadow", "Courage", "Courage here rests on a promise, not on temperament: God goes with you."),
+ (10, "James 1:5", "dawn", "Wisdom", "Wisdom is asked for, not manufactured. A fitting verse for anyone who loves hard questions."),
+ (11, "1 Thessalonians 5:18", "watercolor", "Gratitude", "Thanks 'in' everything, not 'for' everything: gratitude that does not depend on circumstances."),
+ (12, "John 1:14", "blush", "The Word became flesh", "The center of the Christian claim in a sentence: the eternal Word enters history."),
+]

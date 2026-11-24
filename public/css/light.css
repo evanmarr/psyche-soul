@@ -151,6 +151,15 @@ html[data-theme="light"] .listpick.on{border-color:rgba(214,170,120,0.55);backgr
 html[data-theme="light"] .admin-login{background:linear-gradient(180deg,#e9e6e1,#efede9);box-shadow:0 30px 80px rgba(0,0,0,0.2)}
 html[data-theme="light"] .atable-wrap{background:rgba(0,0,0,0.02)}
 html[data-theme="light"] .admin-body-inner code{background:rgba(0,0,0,0.06)}
+html[data-theme="light"] .poster-canvas{box-shadow:0 18px 50px rgba(0,0,0,0.18);background:#ece9e4}
+html[data-theme="light"] .seg a{color:#574e42}
+html[data-theme="light"] .seg a.on{background:rgba(201,143,91,0.25);color:#000000}
+html[data-theme="light"] .mem-text mark{background:rgba(224,138,125,0.35)}
+html[data-theme="light"] .blank{background:rgba(201,143,91,0.12)}
+html[data-theme="light"] .blank:hover{background:rgba(201,143,91,0.3)}
+html[data-theme="light"] .mem-done.on{background:rgba(147,197,141,0.16);border-color:rgba(147,197,141,0.45);color:#3f8235}
+html[data-theme="light"] .poster-thumb{box-shadow:0 10px 26px rgba(0,0,0,0.16);background:#ece9e4}
+html[data-theme="light"] .vom-card .poster-canvas{box-shadow:0 12px 30px rgba(0,0,0,0.16)}
 /* rules that keep their dark look */
 html[data-theme="light"] .avatar{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;object-fit:cover;color:#f2e4d0;font-weight:600;flex:none;border:1px solid var(--line2)}
 html[data-theme="light"] .btn.primary{background:linear-gradient(135deg,#d19962,#a8693d);color:#1c0f08;border-color:transparent;font-weight:600;box-shadow:0 4px 18px rgba(168,105,61,.25)}

@@ -1,8 +1,9 @@
 """Study paths (curated, with progress) and reading lists (made by members)."""
-import re
+import calendar, datetime, re
 import bible, db
 from framework import route, HTTPError
 from routes import rows, one, person, TYPES
+from seed_content import VERSES_OF_MONTH
 
 def _int(s): return int(s) if str(s).isdigit() else 0
 
@@ -118,3 +119,42 @@ def toggle_item(r):
 @route("DELETE", "/api/lists/<id>/items/<aid>")
 def remove_item(r):
     lid = _own_list(r); r.db.execute("DELETE FROM reading_list_items WHERE list_id=? AND article_id=?", (lid, _int(r.params["aid"])))
+
+# ------------------------------------------------------------------ verses: month, any reference, offline packs
+def _passage(ref, tr):
+    """Text for a reference such as 'Romans 12:2' or '1 Thessalonians 5:18' (a verse or a short range)."""
+    p = bible.parse_reference(ref)
+    if not p or not p[2]: return None
+    b, ch, v, ve = p; ve = ve or v
+    if ve < v or ve - v > 11: return None
+    text = " ".join(bible.verse_text(b, ch, x, tr) for x in range(v, ve + 1)).strip()
+    if not text: return None
+    return {"label": bible.ref_label(b, ch, v, ve if ve != v else None).replace("Psalms ", "Psalm ", 1), "book": bible.BOOKS[b]["slug"], "chapter": ch, "verse": v, "verse_end": ve,
+            "text": re.sub(r"\s+", " ", text), "translation": bible.norm_tr(tr).upper()}
+
+def _month_item(m, tr):
+    month, ref, style, theme, note = VERSES_OF_MONTH[(m - 1) % 12]
+    out = _passage(ref, tr) or {}
+    out.update(month=month, month_name=calendar.month_name[month], style=style, theme=theme, note=note)
+    return out
+
+@route("GET", "/api/verse-of-month")
+def verse_of_month(r):
+    m = r.qi("m", datetime.date.today().month, 1, 12)
+    out = _month_item(m, r.q("tr", bible.DEFAULT)); out["current"] = m == datetime.date.today().month
+    return out
+
+@route("GET", "/api/verses/months")
+def verse_months(r):
+    tr = r.q("tr", bible.DEFAULT)
+    return {"current": datetime.date.today().month, "items": [_month_item(m, tr) for m in range(1, 13)]}
+
+@route("GET", "/api/verse")
+def verse_lookup(r):
+    out = _passage(r.q("ref"), r.q("tr", bible.DEFAULT))
+    if not out: raise HTTPError(404, "That passage could not be found. Use a form like John 3:16 or Romans 8:28-30 (up to 12 verses).")
+    return out
+
+@route("GET", "/api/bible/pack")
+def bible_pack(r):
+    return bible.pack(r.q("tr", bible.DEFAULT), r.qi("part", 0, 0, 20))

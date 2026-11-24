@@ -57,7 +57,7 @@ class Req:
         if not self.is_admin: raise HTTPError(401, "Admin sign-in required.")
 
 CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-       "font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'")
+       "font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'")
 
 class Handler(BaseHTTPRequestHandler):
     server_version = "PsycheSoul/1.0"
@@ -83,7 +83,7 @@ class Handler(BaseHTTPRequestHandler):
         if not full.startswith(STATIC + os.sep) or not os.path.isfile(full):
             if "." not in os.path.basename(rel): full = os.path.join(STATIC, "index.html")     # SPA fallback
             else: return self._json(404, {"error": "Not found"})
-        ctype = mimetypes.guess_type(full)[0] or "application/octet-stream"
+        ctype = "application/manifest+json" if full.endswith(".webmanifest") else mimetypes.guess_type(full)[0] or "application/octet-stream"
         if ctype.startswith("text/") or ctype in ("application/javascript", "image/svg+xml"): ctype += "; charset=utf-8"
         with open(full, "rb") as f: data = f.read()
         self._send(200, data, ctype, [("Cache-Control", "no-cache")])

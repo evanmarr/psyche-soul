@@ -32,6 +32,11 @@ The password comes from `ADMIN_PASSWORD`; if that is unset a default is used, wh
 ## Bible text
 Two public-domain translations are bundled, so no API key or outside service is needed: the **World English Bible** (`data/web.json`, the default) and the **King James Version** (`data/kjv.json`). Reference parsing and verse search live in `bible.py`.
 
+## Verse of the Month, posters, and the app
+- **Verse of the Month** (`#/verse`): one passage per calendar month (`VERSES_OF_MONTH` in `seed_content.py`), shown as a poster with a memorize tool (hide 25/50/75/100% of the words, then type it from memory to be scored).
+- **Posters** (`public/js/poster.js`): six hand-lettered designs (Blush, Sunset, Watercolor, Midnight, Meadow, Dawn) drawn on a canvas, so the on-screen poster and the downloaded PNG are identical. Any verse can be made into a poster from the Bible reader ("Poster" in the selection bar) or `#/poster/<book>/<chapter>?v=<verse>`.
+- **Installable app** (`public/manifest.webmanifest`, `public/sw.js`): the site installs from the browser. `#/app` explains installing and downloads whole Bible translations (served in six slices by `/api/bible/pack`) into the browser for offline reading. The service worker caches the app files and public pages; it never stores personal data, and the API cache is cleared on sign-out. **When you change the list of app files, bump `VERSION` in `sw.js`.**
+
 ## Themes and text size
 The site is designed dark. `public/css/light.css` is **generated** from `app.css` by `python3 tools/make_light_theme.py`; run it again after changing `app.css`. Visitors choose theme and text size (Normal / Large / Extra large) from the "Aa" button; the choice is stored in their browser.
 
@@ -50,7 +55,7 @@ The site is designed dark. `public/css/light.css` is **generated** from `app.css
 | `tools/make_light_theme.py` | Generates the light theme |
 
 ## Security notes
-HttpOnly + SameSite cookies, `X-Requested-With` required on writes (CSRF), strict CSP, escaped rendering, parameterized SQL, login/registration/admin rate limiting, avatar validation. Not yet built: email verification, password reset, report buttons.
+HttpOnly + SameSite cookies, `X-Requested-With` required on writes (CSRF), strict CSP (set by the server for API/local use and by `vercel.json` for the static pages; keep the two in sync), escaped rendering, parameterized SQL, login/registration/admin rate limiting, avatar validation. Not yet built: email verification, password reset, report buttons.
 
 ## Content notes
 Articles and study paths are original text; the references cited are real works. Posts are labelled (Classical source / Philosophical theory / Theological position / Philosophical argument / Open discussion) so what a text says, what is argued, and what the church teaches stay distinct.

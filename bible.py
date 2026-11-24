@@ -98,3 +98,15 @@ def search(q, limit=40, tr=DEFAULT):
             total += 1
             if len(out) < limit: out.append({"book": bi, "chapter": ch, "verse": v, "text": t, "ref": ref_label(bi, ch, v)})
     return out, total
+
+def pack(tr, part, parts=6):
+    """A slice of a whole translation for offline use: books are split into `parts` chunks of similar size (each well under 1 MB)."""
+    tr = norm_tr(tr); text = _TEXT[tr]
+    sizes = [sum(len(v) for ch in b for v in ch) for b in text]; target = sum(sizes) / parts
+    ranges, start, acc = [], 0, 0
+    for i, sz in enumerate(sizes):
+        acc += sz
+        if acc >= target * (len(ranges) + 1) and len(ranges) < parts - 1: ranges.append((start, i)); start = i + 1
+    ranges.append((start, len(sizes) - 1))
+    part = max(0, min(part, len(ranges) - 1)); a, b = ranges[part]
+    return {"translation": tr, "part": part, "parts": len(ranges), "ranges": ranges, "books": {str(i): text[i] for i in range(a, b + 1)}}

@@ -60,7 +60,9 @@ const hydrateIcons = (root = document) => $$("[data-icon]", root).forEach(e => {
 const S = { user: null, config: { labels: {} }, unread: 0, books: [], translations: [], cats: [] };
 class ApiError extends Error { constructor(m, status) { super(m); this.status = status; } }
 async function api(path, { method = "GET", body } = {}) {
-  const res = await fetch("/api" + path, { method, headers: { "X-Requested-With": "psyche", ...(body ? { "Content-Type": "application/json" } : {}) }, body: body ? JSON.stringify(body) : undefined, credentials: "same-origin" });
+  let res;
+  try { res = await fetch("/api" + path, { method, headers: { "X-Requested-With": "psyche", ...(body ? { "Content-Type": "application/json" } : {}) }, body: body ? JSON.stringify(body) : undefined, credentials: "same-origin" }); }
+  catch { throw new ApiError("You appear to be offline. Check your connection and try again.", 0); }
   let data = {}; try { data = await res.json(); } catch { }
   if (!res.ok) throw new ApiError(data.error || "Something went wrong.", res.status);
   return data;
@@ -220,7 +222,7 @@ ACT.auth = el => openAuth(el.dataset.mode || "login");
 ACT["demo-login"] = async () => { await api("/login", { method: "POST", body: { username: "demo", password: "PsycheDemo1!" } }); await afterAuth(); };
 FORM.login = async (f, d) => { try { await api("/login", { method: "POST", body: d }); await afterAuth(); } catch (e) { $("#auth-err").textContent = e.message; } };
 FORM.register = async (f, d) => { try { await api("/register", { method: "POST", body: d }); await afterAuth(); } catch (e) { $("#auth-err").textContent = e.message; } };
-ACT.logout = async () => { await api("/logout", { method: "POST" }); await loadMe(); toast("Signed out"); go("#/"); };
+ACT.logout = async () => { await api("/logout", { method: "POST" }); try { await caches.delete("ps-api"); } catch { } await loadMe(); toast("Signed out"); go("#/"); };
 
 async function loadMe() {
   const d = await api("/me"); S.user = d.user; S.config = d.config; S.unread = d.unread || 0; renderChrome();
