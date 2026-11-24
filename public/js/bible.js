@@ -1,6 +1,6 @@
 /* Bible reader, plans, search and personal study. */
 "use strict";
-const B = (() => { try { return { size: 21, font: "serif", focus: false, tr: "kjv", ...JSON.parse(localStorage.getItem("psBible") || "{}") }; } catch { return { size: 21, font: "serif", focus: false, tr: "kjv" }; } })();
+const B = (() => { try { return { size: 21, font: "serif", focus: false, tr: "web", ...JSON.parse(localStorage.getItem("psBible") || "{}") }; } catch { return { size: 21, font: "serif", focus: false, tr: "web" }; } })();
 const saveB = () => { try { localStorage.setItem("psBible", JSON.stringify(B)); } catch { } };
 const COLORS = ["gold", "purple", "green", "blue", "rose"];
 let CUR = null; const SEL = new Set();
@@ -13,7 +13,7 @@ function rangeLabel(vs) {
   for (let i = 1; i <= a.length; i++) { if (a[i] === p + 1) { p = a[i]; continue; } out.push(s === p ? `${s}` : `${s}-${p}`); s = p = a[i]; }
   return out.join(", ");
 }
-const trName = () => (S.translations.find(t => t.id === B.tr) || { name: "KJV" }).name;
+const trName = () => (S.translations.find(t => t.id === B.tr) || { name: "WEB" }).name;
 const selText = () => [...SEL].sort((a, b) => a - b).map(n => (CUR.verses.find(v => v.n === n) || {}).t).join(" ");
 const selRef = () => `${CUR.book.name} ${CUR.chapter}:${rangeLabel(SEL)}`;
 async function copyText(t) {
@@ -28,10 +28,10 @@ page("/bible", async () => {
 
 page("/bible/:book/:ch", async ({ book, ch }, q) => {
   const b = bookBySlug(book); if (!b) throw new ApiError("That book does not exist.", 404);
-  if (S.translations.find(t => t.id === B.tr && !t.available)) B.tr = "kjv";
+  if (!S.translations.find(t => t.id === B.tr)) B.tr = "web";
   let d;
   try { d = await api(`/bible/passage${qs({ book, chapter: ch, tr: B.tr })}`); }
-  catch (e) { if (e.status === 409 || e.status === 502) { toast(e.message, "err"); B.tr = "kjv"; saveB(); d = await api(`/bible/passage${qs({ book, chapter: ch, tr: "kjv" })}`); } else throw e; }
+  catch (e) { throw e; }
   CUR = d; SEL.clear();
   const notesBy = {}; d.notes.forEach(n => (notesBy[n.verse] = notesBy[n.verse] || []).push(n));
   const bm = new Set(d.bookmarks);
@@ -42,7 +42,7 @@ page("/bible/:book/:ch", async ({ book, ch }, q) => {
     <div class="reader-tabs">${bibleTabs("read")}</div>
     <div class="reader-bar">
       <button class="picker" data-act="pick" aria-haspopup="dialog"><span>${b.name} ${ch}</span>${icon("down")}</button>
-      <div class="seg" role="group" aria-label="Translation">${S.translations.map(t => html`<button class="${B.tr === t.id ? "on" : ""} ${t.available ? "" : "off"}" data-act="tr" data-tr="${t.id}" title="${t.full}${t.available ? "" : " (not configured)"}">${t.name}</button>`)}</div>
+      <div class="seg" role="group" aria-label="Translation">${S.translations.map(t => html`<button class="${B.tr === t.id ? "on" : ""}" data-act="tr" data-tr="${t.id}" title="${t.full}">${t.name}</button>`)}</div>
       <div class="rtools"><button class="icon-btn" data-act="fs" data-d="-1" aria-label="Smaller text" title="Smaller text"><span class="fs-s">A</span></button><button class="icon-btn" data-act="fs" data-d="1" aria-label="Larger text" title="Larger text"><span class="fs-l">A</span></button>
         <button class="icon-btn" data-act="font" aria-label="Toggle serif or sans-serif" title="Serif / Sans">${icon("type")}</button>
         <button class="icon-btn ${B.focus ? "on" : ""}" data-act="focus" aria-label="Reading mode" title="Comfortable reading mode">${icon("focus")}</button></div>
@@ -50,7 +50,7 @@ page("/bible/:book/:ch", async ({ book, ch }, q) => {
     <article class="reader ${B.font}" style="--fs:${B.size}px">
       <header class="rhead"><span class="rbook">${b.name}</span><h1>Chapter ${ch}</h1><span class="rtr">${S.translations.find(t => t.id === B.tr)?.full || ""}</span></header>
       <div class="bible-text" id="btext">${verses}</div>
-      ${B.tr === "kjv" ? html`<p class="copyright">King James Version, public domain. ESV text is available when an ESV API key is configured on the server.</p>` : html`<p class="copyright">Scripture quotations are from the ESV&reg; Bible, &copy; 2001 by Crossway, a publishing ministry of Good News Publishers. Used via the ESV API.</p>`}
+      <p class="copyright">${B.tr === "kjv" ? "King James Version (public domain)." : "World English Bible (public domain)."} Both translations are free to use and copy.</p>
       <nav class="chnav">${d.prev ? html`<a class="btn" href="#/bible/${d.prev.book}/${d.prev.chapter}">${icon("left")} ${d.prev.name} ${d.prev.chapter}</a>` : html`<span></span>`}
         ${d.next ? html`<a class="btn" href="#/bible/${d.next.book}/${d.next.chapter}">${d.next.name} ${d.next.chapter} ${icon("right")}</a>` : ""}</nav>
       ${S.user ? "" : html`<div class="signin-note">${icon("user")}<span><button class="link" data-act="auth">Sign in</button> to highlight, take notes, bookmark verses and track your reading.</span></div>`}
@@ -117,12 +117,7 @@ ACT.fs = el => { B.size = Math.max(15, Math.min(32, B.size + 2 * +el.dataset.d))
 ACT.font = () => { B.font = B.font === "serif" ? "sans" : "serif"; saveB(); const r = $(".reader"); r.classList.toggle("serif", B.font === "serif"); r.classList.toggle("sans", B.font === "sans"); };
 ACT.focus = () => { B.focus = !B.focus; saveB(); document.body.classList.toggle("reading", B.focus); const b = $('[data-act="focus"]'); if (b) b.classList.toggle("on", B.focus); };
 ACT.unfocus = () => { B.focus = false; saveB(); document.body.classList.remove("reading"); const b = $('[data-act="focus"]'); if (b) b.classList.remove("on"); };
-ACT.tr = el => {
-  const t = S.translations.find(x => x.id === el.dataset.tr);
-  if (!t.available) return openModal(html`<h2>ESV is not configured yet</h2><p>This site reads the English Standard Version through the official <b>ESV API</b>, so no copyrighted text is stored here. To switch it on:</p>
-    <ol class="steps"><li>Create a free API key at <b>api.esv.org</b> (Crossway).</li><li>Start the server with <code>ESV_API_KEY=your-key python3 server.py</code>.</li><li>Follow Crossway's display and attribution terms (the reader already shows the required notice).</li></ol><p class="muted">Until then the reader uses the public-domain KJV.</p><div class="row end"><button class="btn primary" data-act="close-modal">Got it</button></div>`);
-  B.tr = t.id; saveB(); rerender();
-};
+ACT.tr = el => { B.tr = el.dataset.tr; saveB(); rerender(); };
 ACT.pick = () => {
   const list = (ot) => S.books.filter(b => (b.testament === "OT") === ot).map(b => html`<button class="bk ${CUR && CUR.book.slug === b.slug ? "on" : ""}" data-act="pick-book" data-slug="${b.slug}">${b.name}</button>`);
   openModal(html`<div class="row between"><h2>Choose a book</h2><button class="icon-btn" data-act="close-modal" aria-label="Close">${icon("x")}</button></div>
@@ -152,14 +147,14 @@ document.addEventListener("keydown", e => {
 const hilite = (t, q) => { let s = esc(t); q.split(/\s+/).filter(w => w.length > 1).forEach(w => { s = s.replace(new RegExp("(" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "gi"), "<mark>$1</mark>"); }); return raw(s); };
 page("/bible/search", async (_, q) => {
   const term = (q.q || "").trim(); let d = null;
-  if (term.length >= 2) d = await api("/bible/search" + qs({ q: term }));
+  if (term.length >= 2) d = await api("/bible/search" + qs({ q: term, tr: B.tr }));
   return { title: "Search the Bible", html: html`
   <div class="reader-wrap wide-wrap"><div class="reader-tabs">${bibleTabs("search")}</div>
   <h1>Search the Bible</h1>
   <form class="bigsearch" data-form="biblesearch">${icon("search")}<input name="q" value="${term}" placeholder='Search words ("peace", "renewing of your mind") or go to a passage ("Romans 12:2")' aria-label="Search the Bible" autofocus><button class="btn primary">Search</button></form>
   ${d ? html`${d.reference ? html`<a class="jump" href="#/bible/${d.reference.book}/${d.reference.chapter}${d.reference.verse ? "?v=" + d.reference.verse : ""}">${icon("book")}<span>Go to <b>${d.reference.label}</b></span>${icon("right")}</a>` : ""}
-    <p class="muted">${d.total} ${d.total === 1 ? "verse" : "verses"} in the KJV contain ${d.query ? html`<b>${d.query}</b>` : ""}${d.total > d.results.length ? ` (showing the first ${d.results.length})` : ""}.</p>
-    <div class="panel list">${d.results.length ? d.results.map(r => html`<a class="vres" href="#/bible/${r.book}/${r.chapter}?v=${r.verse}"><b>${r.ref}</b><span>${hilite(r.text, d.query)}</span></a>`) : emptyState("No verses found", "Try fewer or different words. Searching uses the public-domain KJV wording.")}</div>` :
+    <p class="muted">${d.total} ${d.total === 1 ? "verse" : "verses"} in the ${d.translation.toUpperCase()} contain ${d.query ? html`<b>${d.query}</b>` : ""}${d.total > d.results.length ? ` (showing the first ${d.results.length})` : ""}.</p>
+    <div class="panel list">${d.results.length ? d.results.map(r => html`<a class="vres" href="#/bible/${r.book}/${r.chapter}?v=${r.verse}"><b>${r.ref}</b><span>${hilite(r.text, d.query)}</span></a>`) : emptyState("No verses found", "Try fewer or different words. Searching uses the wording of the translation you are reading.")}</div>` :
       html`<p class="muted">Search covers the whole Bible. Use the exact wording of the translation, or type a passage reference to jump straight to it.</p>`}
   </div>` };
 });

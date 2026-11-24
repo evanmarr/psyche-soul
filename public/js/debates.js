@@ -29,13 +29,14 @@ page("/debates/new", async () => {
 FORM.newdebate = async (f, d) => { const r = await api("/debates", { method: "POST", body: d }); toast("Debate created. Add the first opening argument!", "ok"); go("#/debates/" + r.id); };
 
 const scriptureBlock = vs => vs.length ? html`<details class="scripture"><summary>${icon("book")} Supporting Scripture <span class="muted">(${vs.map(v => v.label).join("; ")})</span></summary>
-  ${vs.map(v => html`<blockquote><a class="ref" href="#/bible/${v.book}/${v.chapter}?v=${v.verse}">${v.label}</a> <span>${v.text}</span><cite>KJV</cite></blockquote>`)}</details>` : "";
+  ${vs.map(v => html`<blockquote><a class="ref" href="#/bible/${v.book}/${v.chapter}?v=${v.verse}">${v.label}</a> <span>${v.text}</span><cite>WEB</cite></blockquote>`)}</details>` : "";
 const refsBlock = rs => rs.length ? html`<details class="refsbox"><summary>${icon("scroll")} Sources &amp; references <span class="muted">(${rs.length})</span></summary><ul>${rs.map(r => html`<li>${r}</li>`)}</ul></details>` : "";
 function entryCard(e, d) {
   const label = e.side === "aff" ? d.aff_label : d.opp_label;
   return html`<article class="entry ${e.side}"><header><span class="sidetag ${e.side}">${label}</span><span class="kind">${KIND[e.kind]}</span></header>
     <div class="rich">${rich(e.body)}</div>${scriptureBlock(e.verses)}${refsBlock(e.refs)}
-    ${e.author.username === "editors" ? "" : html`<footer>${authorLink(e.author)}<span class="muted">${ago(e.created_at)}</span></footer>`}</article>`;
+    ${e.author.username === "editors" ? "" : html`<footer>${authorLink(e.author)}<span class="muted">${ago(e.created_at)}</span>
+      ${S.user && S.user.username === e.author.username ? html`<span class="entry-acts"><button class="link" data-act="edit-entry" data-id="${e.id}">${icon("pencil")} Edit</button><button class="link dangerlink" data-act="del-entry" data-id="${e.id}">${icon("trash")} Delete</button></span>` : ""}</footer>`}</article>`;
 }
 const tallyBars = (t, d) => { const n = t.aff + t.opp || 1; const a = Math.round(t.aff / n * 100); return html`<div class="tally"><div class="tr"><span>${d.aff_label}</span><div class="bar aff"><i style="width:${a}%"></i></div><b>${a}%</b></div>
   <div class="tr"><span>${d.opp_label}</span><div class="bar opp"><i style="width:${100 - a}%"></i></div><b>${100 - a}%</b></div>
@@ -49,7 +50,7 @@ page("/debates/:id", async ({ id }) => {
   return { title: d.title, html: html`
   <article class="debate">
     <p class="crumbs"><a href="#/debates">Debates</a> / ${d.cname}</p>
-    <header class="dhead"><span class="eyebrow">${d.cname} &middot; ${d.entries.length} arguments</span><h1>${d.title}</h1>
+    <header class="dhead"><span class="eyebrow">${d.cname} &middot; ${d.entries.length} ${d.entries.length === 1 ? "argument" : "arguments"}</span><h1>${d.title}</h1>
       <p class="question"><span>The question</span>${d.question}</p><p class="lede">${d.summary}</p>
       ${d.proposer ? html`<p class="muted small">Proposed by <a class="who-link" href="#/u/${d.proposer.username}">${d.proposer.name}</a></p>` : ""}
       <div class="row gap wrap">${bmBtn("debate", d.id, d.bookmarked)}<button class="btn primary" data-act="contribute">${icon("plus")} Add an argument</button>${d.can_edit ? html`<button class="btn" data-act="edit-debate">${icon("pencil")} Edit debate</button>` : ""}</div></header>
@@ -82,6 +83,24 @@ ACT["edit-debate"] = () => {
 FORM.editdebate = async (f, data) => {
   try { await api("/debates/" + window._debate.id, { method: "PUT", body: data }); closeModal(); toast("Debate updated", "ok"); rerender(); }
   catch (e) { $("#ed-err").textContent = e.message; }
+};
+ACT["edit-entry"] = el => {
+  const d = window._debate; const e = d.entries.find(x => x.id === +el.dataset.id); if (!e) return;
+  openModal(html`<div class="row between"><h2>Edit your argument</h2><button class="icon-btn" data-act="close-modal" aria-label="Close">${icon("x")}</button></div>
+  <form class="form" data-form="editentry" data-eid="${e.id}"><p class="muted small">${KIND[e.kind]} for <b>${e.side === "aff" ? d.aff_label : d.opp_label}</b></p>
+    <label>Your argument<textarea name="body" rows="9" required minlength="40" maxlength="4000">${e.body}</textarea></label>
+    <label>Supporting Bible passages<textarea name="verses" rows="3" placeholder="One per line, e.g. Romans 9:19-21">${e.verses.map(v => v.label).join("\n")}</textarea></label>
+    <label>Sources &amp; references<textarea name="refs" rows="3" placeholder="One per line">${e.refs.join("\n")}</textarea></label>
+    <p class="form-err" id="entry-err"></p><div class="row end gap"><button type="button" class="btn" data-act="close-modal">Cancel</button><button class="btn primary">Save changes</button></div></form>`, { wide: true });
+};
+FORM.editentry = async (f, d) => {
+  const lines = s => (s || "").split("\n").map(x => x.trim()).filter(Boolean);
+  try { await api(`/debates/${window._debate.id}/entries/${f.dataset.eid}`, { method: "PUT", body: { body: d.body, verses: lines(d.verses), refs: lines(d.refs) } }); closeModal(); toast("Argument updated", "ok"); rerender(); }
+  catch (e) { $("#entry-err").textContent = e.message; }
+};
+ACT["del-entry"] = async el => {
+  if (!await confirmBox("Delete this argument?", "It will be removed from the debate. This cannot be undone.")) return;
+  await api(`/debates/${window._debate.id}/entries/${el.dataset.id}`, { method: "DELETE" }); toast("Argument deleted"); rerender();
 };
 FORM.vote = async (f, d) => {
   if (!S.user) return openAuth();

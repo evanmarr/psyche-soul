@@ -2,7 +2,7 @@
 import os, sys
 from http.server import BaseHTTPRequestHandler
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import routes  # noqa: F401  (registers the API routes)
+import routes, features, admin  # noqa: F401  (register the API routes)
 from framework import Handler
 
 

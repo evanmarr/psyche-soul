@@ -16,7 +16,7 @@ ACT["votd-bm"] = async el => {
 };
 page("/", async () => {
   const [list, votd, deb, lib, prog] = await Promise.all([homeList("all"), api("/votd"), api("/debates"), api("/library"), S.user ? api("/progress").catch(() => null) : null]);
-  const quick = [["book", "Read the Bible", "KJV · Annotate · Quote", "#/bible", "feature"], ["chat", "Join a Discussion", "Theology · Philosophy · More", "#/forums"], ["scale", "Debate a Topic", "Structured · Civil · In-Depth", "#/debates"], ["layers", "Explore the Library", "Articles · Resources · Essays", "#/library"]];
+  const quick = [["book", "Read the Bible", "WEB · KJV · Annotate · Quote", "#/bible", "feature"], ["chat", "Join a Discussion", "Theology · Philosophy · More", "#/forums"], ["scale", "Debate a Topic", "Structured · Civil · In-Depth", "#/debates"], ["layers", "Explore the Library", "Articles · Resources · Essays", "#/library"]];
   const feat = deb.items[0] || null;
   return { title: "", html: html`
   <section class="hero" aria-label="Psyche and Soul"><div class="hero-art"></div><div class="hero-inner">

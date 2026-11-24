@@ -57,7 +57,7 @@ const icon = (n, cls = "") => raw(`<svg class="ic ${cls}" viewBox="0 0 24 24" fi
 const hydrateIcons = (root = document) => $$("[data-icon]", root).forEach(e => { e.innerHTML = icon(e.dataset.icon).s; e.removeAttribute("data-icon"); });
 
 /* ---------- state & API ---------- */
-const S = { user: null, config: { esv: false, labels: {} }, unread: 0, books: [], translations: [], cats: [] };
+const S = { user: null, config: { labels: {} }, unread: 0, books: [], translations: [], cats: [] };
 class ApiError extends Error { constructor(m, status) { super(m); this.status = status; } }
 async function api(path, { method = "GET", body } = {}) {
   const res = await fetch("/api" + path, { method, headers: { "X-Requested-With": "psyche", ...(body ? { "Content-Type": "application/json" } : {}) }, body: body ? JSON.stringify(body) : undefined, credentials: "same-origin" });

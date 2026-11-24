@@ -8,6 +8,7 @@ import db
 ROOT = os.path.dirname(os.path.abspath(__file__))
 STATIC = os.path.join(ROOT, "public")
 COOKIE = "ps_session"
+ADMIN_COOKIE = "ps_admin"
 SECURE = os.environ.get("PSYCHE_SECURE", "") == "1" or bool(os.environ.get("VERCEL"))
 ROUTES = []
 
@@ -45,9 +46,15 @@ class Req:
         if len(v) < lo and v: raise HTTPError(400, f"'{name}' must be at least {lo} characters.")
         if len(v) > hi: raise HTTPError(400, f"'{name}' is too long (max {hi} characters).")
         return v
-    def set_cookie(self, token, max_age):
-        flags = f"{COOKIE}={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age={max_age}" + ("; Secure" if SECURE else "")
-        self.cookies_out.append(flags)
+    def set_cookie(self, token, max_age, name=COOKIE, samesite="Lax"):
+        self.cookies_out.append(f"{name}={token}; Path=/; HttpOnly; SameSite={samesite}; Max-Age={max_age}" + ("; Secure" if SECURE else ""))
+    @property
+    def is_admin(self):
+        c = SimpleCookie(self.h.headers.get("Cookie", ""))
+        if ADMIN_COOKIE not in c: return False
+        return bool(self.db.execute("SELECT 1 FROM admin_sessions WHERE token=? AND expires_at>?", (c[ADMIN_COOKIE].value, db.now())).fetchone())
+    def need_admin(self):
+        if not self.is_admin: raise HTTPError(401, "Admin sign-in required.")
 
 CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
        "font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'")
@@ -70,7 +77,7 @@ class Handler(BaseHTTPRequestHandler):
                    [("Cache-Control", "no-store")] + [("Set-Cookie", c) for c in cookies])
 
     def _static(self, path):
-        rel = "index.html" if path in ("/", "") else unquote(path.lstrip("/"))
+        rel = "index.html" if path in ("/", "") else "adm1n.html" if path.rstrip("/") == "/adm1n" else unquote(path.lstrip("/"))
         if rel.startswith("public/"): rel = rel[7:]
         full = os.path.normpath(os.path.join(STATIC, rel))
         if not full.startswith(STATIC + os.sep) or not os.path.isfile(full):

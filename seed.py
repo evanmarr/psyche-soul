@@ -9,6 +9,22 @@ from seed_content import *
 TABLES = ("login_attempts", "notifications", "debate_votes", "debate_entries", "debates", "plan_progress", "plans", "history", "notes", "highlights",
           "bookmarks", "reactions", "comments", "discussions", "group_members", "groups_", "categories", "sessions", "users", "articles")
 
+def ensure_study_paths(c):
+    """Add the starter study paths if there are none yet (safe to run on a live database; never touches existing content)."""
+    if c.execute("SELECT COUNT(*) FROM study_paths").fetchone()[0]: return 0
+    n = 0
+    for i, p in enumerate(STUDY_PATHS):
+        cur = c.execute("INSERT INTO study_paths(slug,title,description,level,sort) VALUES(?,?,?,?,?)", (p["slug"], p["title"], p["description"], p["level"], i))
+        pid = cur.lastrowid
+        for pos, (kind, ref, title, note) in enumerate(p["steps"], 1):
+            if kind == "library":
+                a = c.execute("SELECT id, title FROM articles WHERE title LIKE ?", (ref + "%",)).fetchone()
+                if not a: print("  (missing library item:", ref, ")"); continue
+                ref, title = str(a["id"]), a["title"]
+            c.execute("INSERT INTO study_path_steps(path_id,position,kind,ref,title,note) VALUES(?,?,?,?,?,?)", (pid, pos, kind, ref, title, note))
+        n += 1
+    return n
+
 def run(reset=False):
     if reset and db.REMOTE:
         c = db.connect()                                      # drop everything (children first), then rebuild below
@@ -20,7 +36,8 @@ def run(reset=False):
     db.init()
     c = db.connect()
     if c.execute("SELECT COUNT(*) FROM categories").fetchone()[0]:
-        print("Database already has data (use --reset to rebuild)."); return
+        added = ensure_study_paths(c); c.commit()
+        print("Database already has data (use --reset to rebuild)." + (f" Added {added} study paths." if added else "")); return
     now = db.now(); ago = lambda hrs: int(now - hrs * 3600)
     for i, (slug, name, desc, icon) in enumerate(CATEGORIES):
         c.execute("INSERT INTO categories VALUES(?,?,?,?,?)", (slug, name, desc, icon, i))
@@ -36,6 +53,7 @@ def run(reset=False):
               [[f"{b} {ch}"] for b, ch, _ in PLAN_THEMATIC])]
     for slug, name, desc, days in plans:
         c.execute("INSERT INTO plans(slug,name,description,days) VALUES(?,?,?,?)", (slug, name, desc, json.dumps(days)))
+    ensure_study_paths(c)
     c.commit(); c.close()
     print("Seeded:", len(CATEGORIES), "categories,", len(GROUPS), "groups,", len(ARTICLES), "library items,", len(plans), "reading plans. No users or discussions.")
 

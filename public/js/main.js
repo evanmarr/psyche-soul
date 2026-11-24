@@ -1,10 +1,10 @@
 /* App shell: navigation chrome, notifications, boot. */
 "use strict";
-const NAV = [["/", "Home", "home", "#/"], ["/bible", "Bible", "book", "#/bible"], ["/forums", "Forums", "chat", "#/forums"], ["/debates", "Debates", "scale", "#/debates"], ["/library", "Library", "layers", "#/library"], ["/groups", "Groups", "users", "#/groups"]];
+const NAV = [["/", "Home", "home", "#/"], ["/bible", "Bible", "book", "#/bible"], ["/forums", "Forums", "chat", "#/forums"], ["/debates", "Debates", "scale", "#/debates"], ["/library", "Library", "layers", "#/library"], ["/study", "Study", "scroll", "#/study"], ["/groups", "Groups", "users", "#/groups"]];
 function activePath() { return (location.hash.replace(/^#/, "") || "/").split("?")[0]; }
 function setNav(path) {
   const key = path === "/" ? "/" : "/" + path.split("/")[1];
-  const alias = { "/d": "/forums", "/topic": "/forums", "/topics": "/forums", "/u": "/profile", "/search": "" };
+  const alias = { "/d": "/forums", "/topic": "/forums", "/topics": "/forums", "/u": "/profile", "/lists": "/study", "/search": "" };
   const k = alias[key] !== undefined ? alias[key] : key;
   $$("#topnav a, #sidebar a[data-nav]").forEach(a => a.classList.toggle("on", a.dataset.nav === k));
   $$("#sidebar a[data-topic]").forEach(a => a.classList.toggle("on", path === "/topic/" + a.dataset.topic));
@@ -41,6 +41,22 @@ ACT.bell = async el => {
   popover(el, html`<div class="pop-title">Notifications</div>${d.items.length ? d.items.map(n => html`<a class="pop-note ${n.read ? "" : "unread"}" href="${n.link}">${n.text}<span class="muted small">${ago(n.created_at)}</span></a>`) : html`<p class="muted pad">You're all caught up.</p>`}`, "notes");
   if (S.unread) { await api("/notifications/read", { method: "POST", body: {} }); S.unread = 0; $("#bell-dot").hidden = true; }
 };
+/* ----- display settings: theme and text size (saved in this browser) ----- */
+const SIZE_LABELS = [["normal", "Normal"], ["large", "Large"], ["xl", "Extra large"]];
+const store = (k, v) => { try { localStorage.setItem(k, v); } catch { } };
+function displayPanel() {
+  const t = document.documentElement.dataset.theme, s = document.documentElement.dataset.size;
+  return html`<div class="pop-title">Display</div><div class="disp"><p class="eyebrow">Theme</p>
+    <div class="seg full" role="group" aria-label="Theme"><button data-act="set-theme" data-v="dark" class="${t === "dark" ? "on" : ""}">Dark</button><button data-act="set-theme" data-v="light" class="${t === "light" ? "on" : ""}">Light</button></div>
+    <p class="eyebrow">Text size</p><div class="seg full" role="group" aria-label="Text size">${SIZE_LABELS.map(([k, l]) => html`<button data-act="set-size" data-v="${k}" class="${s === k ? "on" : ""}">${l}</button>`)}</div></div>`;
+}
+ACT.display = el => popover(el, displayPanel(), "menu disp-pop");
+function markActive(attr, value) { $$(`#pop [data-act="${attr}"]`).forEach(b => b.classList.toggle("on", b.dataset.v === value)); }
+ACT["set-theme"] = el => {
+  document.documentElement.dataset.theme = el.dataset.v; store("psTheme", el.dataset.v); markActive("set-theme", el.dataset.v);
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = el.dataset.v === "light" ? "#f5efe6" : "#0c0a0b";
+};
+ACT["set-size"] = el => { document.documentElement.dataset.size = el.dataset.v; store("psSize", el.dataset.v); markActive("set-size", el.dataset.v); };
 ACT.menu = () => document.body.classList.toggle("menu-open");
 FORM.search = (f, d) => { const q = (d.q || "").trim(); if (q.length < 2) { toast("Type at least two characters to search."); return; } go("#/search?q=" + encodeURIComponent(q)); };
 document.addEventListener("click", e => { if (e.target.closest("#sidebar a, .scrim")) document.body.classList.remove("menu-open"); });

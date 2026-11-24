@@ -30,7 +30,7 @@ page("/library/:id", async ({ id }) => {
     ${a.label === "research" ? html`<div class="note-box">${icon("info")}<p>This resource is a <b>study guide to classical sources</b>. Read the primary texts alongside it.</p></div>` : a.label === "theory" ? html`<div class="note-box">${icon("info")}<p>This resource presents a <b>philosophical theory</b>. Thoughtful people disagree about it.</p></div>` : ""}
     <div class="rich body-text article-body">${rich(a.body)}</div>
     ${a.tags.length ? html`<div class="tags">${a.tags.map(t => html`<a class="tag" href="#/library?tag=${t}">#${t}</a>`)}</div>` : ""}
-    <div class="actions">${bmBtn("article", a.id, a.bookmarked)}<button class="btn" data-act="discuss-article" data-title="${a.title}" data-cat="${a.category}">${icon("chat")} Discuss this</button></div>
+    <div class="actions">${bmBtn("article", a.id, a.bookmarked)}<button class="btn" data-act="add-to-list" data-id="${a.id}">${icon("list")} Add to reading list</button><button class="btn" data-act="discuss-article" data-title="${a.title}" data-cat="${a.category}">${icon("chat")} Discuss this</button></div>
     ${a.related.length ? html`<section><h2 class="sec">Related reading</h2><div class="panel list">${a.related.map(r => html`<a class="hrow" href="#/library/${r.id}"><b>${r.title}</b><span class="muted">${r.author}</span></a>`)}</div></section>` : ""}</article>` };
 });
 ACT["discuss-article"] = el => {

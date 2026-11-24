@@ -46,7 +46,7 @@ def _start_session(r, user_id):
 @route("GET", "/api/me")
 def me(r):
     d = r.db.execute("SELECT pw_hash FROM users WHERE username='demo'").fetchone()
-    cfg = {"esv": bool(bible.ESV_KEY), "labels": LABELS, "demo": bool(d and not d["pw_hash"].startswith("pbkdf2$0$"))}
+    cfg = {"labels": LABELS, "demo": bool(d and not d["pw_hash"].startswith("pbkdf2$0$"))}
     if not r.user: return {"user": None, "config": cfg}
     unread = r.db.execute("SELECT COUNT(*) FROM notifications WHERE user_id=? AND read=0", (r.uid,)).fetchone()[0]
     return {"user": public_user(r.user), "unread": unread, "config": cfg}
@@ -202,10 +202,27 @@ def delete_discussion(r):
     d = r.db.execute("SELECT author_id FROM discussions WHERE id=?", (did,)).fetchone()
     if not d: raise HTTPError(404, "Not found.")
     if d["author_id"] != r.uid: raise HTTPError(403, "You can only delete your own discussions.")
-    r.db.execute("DELETE FROM comments WHERE target_type='discussion' AND target_id=?", (did,))
-    r.db.execute("DELETE FROM reactions WHERE target_type='discussion' AND target_id=?", (did,))
-    r.db.execute("DELETE FROM bookmarks WHERE kind='discussion' AND ref=?", (str(did),))
-    r.db.execute("DELETE FROM discussions WHERE id=?", (did,))
+    delete_discussion_rows(r.db, did)
+
+def delete_discussion_rows(c, did):
+    c.execute("DELETE FROM comments WHERE target_type='discussion' AND target_id=?", (did,))
+    c.execute("DELETE FROM reactions WHERE target_type='discussion' AND target_id=?", (did,))
+    c.execute("DELETE FROM bookmarks WHERE kind='discussion' AND ref=?", (str(did),))
+    c.execute("DELETE FROM discussions WHERE id=?", (did,))
+
+@route("PUT", "/api/discussions/<id>")
+def edit_discussion(r):
+    r.need_user(); did = int(r.params["id"]) if r.params["id"].isdigit() else 0
+    d = r.db.execute("SELECT author_id FROM discussions WHERE id=?", (did,)).fetchone()
+    if not d: raise HTTPError(404, "Discussion not found.")
+    if d["author_id"] != r.uid: raise HTTPError(403, "You can only edit your own discussions.")
+    title, body = r.field("title", 5, 200), r.field("body", 10, 10000)
+    cat, label = r.body.get("category", ""), r.body.get("label", "discussion")
+    if not r.db.execute("SELECT 1 FROM categories WHERE slug=?", (cat,)).fetchone(): raise HTTPError(400, "Please choose a category.")
+    if label not in LABELS: raise HTTPError(400, "Invalid label.")
+    r.db.execute("UPDATE discussions SET title=?, body=?, category=?, label=?, tags=? WHERE id=?",
+                 (title, body, cat, label, ",".join(clean_tags(r.body.get("tags", ""))), did))
+    return {"id": did}
 
 def _target(r, ttype, tid):
     if ttype == "discussion":
@@ -277,7 +294,7 @@ def _bookmarks(r, uid):
         k, ref = b["kind"], b["ref"]
         if k == "verse":
             bk, ch, v = (int(x) for x in ref.split(":"))
-            out["verses"].append({"ref": ref, "label": bible.ref_label(bk, ch, v), "book": bible.BOOKS[bk]["slug"], "chapter": ch, "verse": v, "text": bible.verse_text(bk, ch, v)})
+            out["verses"].append({"ref": ref, "label": bible.ref_label(bk, ch, v), "book": bible.BOOKS[bk]["slug"], "chapter": ch, "verse": v, "text": bible.verse_text(bk, ch, v), "translation": bible.DEFAULT.upper()})
         elif k == "discussion":
             x = _discussion_rows(r, "WHERE d.id=?", (int(ref),))
             if x: out["discussions"].append(x[0])
@@ -301,16 +318,13 @@ def _book(slug):
 
 @route("GET", "/api/bible/books")
 def bible_books(r):
-    return {"books": bible.BOOKS, "translations": [{"id": "kjv", "name": "KJV", "full": "King James Version (public domain)", "available": True},
-            {"id": "esv", "name": "ESV", "full": "English Standard Version (via ESV API)", "available": bool(bible.ESV_KEY)}]}
+    return {"books": bible.BOOKS, "translations": bible.TRANSLATIONS, "default": bible.DEFAULT}
 
 @route("GET", "/api/bible/passage")
 def bible_passage(r):
-    b = _book(r.q("book")); ch = r.qi("chapter", 1, 1, 200); tr = r.q("tr", "kjv")
+    b = _book(r.q("book")); ch = r.qi("chapter", 1, 1, 200); tr = bible.norm_tr(r.q("tr", bible.DEFAULT))
     if ch > b["chapters"]: raise HTTPError(404, "Chapter not found.")
-    try: verses = bible.chapter(b["id"], ch, tr)
-    except PermissionError as e: raise HTTPError(409, str(e))
-    except Exception: raise HTTPError(502, "The ESV service could not be reached. Try again or switch to KJV.")
+    verses = bible.chapter(b["id"], ch, tr)
     out = {"book": b, "chapter": ch, "translation": tr, "verses": verses, "highlights": {}, "notes": [], "bookmarks": [], "read": False}
     i = b["id"]
     prev = (bible.BOOKS[i], ch - 1) if ch > 1 else ((bible.BOOKS[i - 1], bible.BOOKS[i - 1]["chapters"]) if i > 0 else None)
@@ -358,8 +372,9 @@ def bible_search(r):
     q = r.q("q").strip()
     if len(q) < 2: raise HTTPError(400, "Enter at least two characters.")
     ref = bible.parse_reference(q)
-    hits, total = bible.search(q, 60)
-    out = {"query": q, "total": total, "results": [{**h, "book": bible.BOOKS[h["book"]]["slug"]} for h in hits], "reference": None}
+    tr = bible.norm_tr(r.q("tr", bible.DEFAULT))
+    hits, total = bible.search(q, 60, tr)
+    out = {"query": q, "translation": tr, "total": total, "results": [{**h, "book": bible.BOOKS[h["book"]]["slug"]} for h in hits], "reference": None}
     if ref:
         b, ch, v, ve = ref; out["reference"] = {"label": bible.ref_label(b, ch, v, ve), "book": bible.BOOKS[b]["slug"], "chapter": ch, "verse": v}
     return out
@@ -403,7 +418,7 @@ def votd(r):
     b = bible.BY_SLUG[re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")]
     ref = f"{b['id']}:{ch}:{v}"
     saved = bool(r.user and r.db.execute("SELECT 1 FROM bookmarks WHERE user_id=? AND kind='verse' AND ref=?", (r.uid, ref)).fetchone())
-    return {"label": bible.ref_label(b["id"], ch, v), "book": b["slug"], "chapter": ch, "verse": v, "ref": ref, "text": bible.verse_text(b["id"], ch, v), "translation": "KJV", "bookmarked": saved}
+    return {"label": bible.ref_label(b["id"], ch, v), "book": b["slug"], "chapter": ch, "verse": v, "ref": ref, "text": bible.verse_text(b["id"], ch, v), "translation": bible.DEFAULT.upper(), "bookmarked": saved}
 
 def _plan_days(p):
     out = []
@@ -519,6 +534,35 @@ def edit_debate(r):
                  (f["title"], f["question"], f["summary"], cat, f["aff_label"], f["opp_label"], f["aff_summary"], f["opp_summary"], did))
     return {"id": did}
 
+def _entry_extras(r):
+    verses = []
+    for s in (r.body.get("verses") or [])[:8]:
+        p = bible.parse_reference(str(s))
+        if p and p[2]: verses.append([p[0], p[1], p[2], p[3]])
+        else: raise HTTPError(400, f"Could not read the Bible reference '{str(s)[:40]}'. Use a form like John 3:16 or Romans 8:28-30.")
+    refs = [str(s).strip()[:300] for s in (r.body.get("refs") or [])[:8] if str(s).strip()]
+    return verses, refs
+
+def _own_entry(r):
+    r.need_user(); did = int(r.params["id"]) if r.params["id"].isdigit() else 0
+    eid = int(r.params["eid"]) if r.params["eid"].isdigit() else 0
+    e = r.db.execute("SELECT id, author_id FROM debate_entries WHERE id=? AND debate_id=?", (eid, did)).fetchone()
+    if not e: raise HTTPError(404, "Argument not found.")
+    if e["author_id"] != r.uid: raise HTTPError(403, "You can only change your own arguments.")
+    return did, eid
+
+@route("PUT", "/api/debates/<id>/entries/<eid>")
+def edit_entry(r):
+    did, eid = _own_entry(r); body = r.field("body", 40, 4000); verses, refs = _entry_extras(r)
+    r.db.execute("UPDATE debate_entries SET body=?, verses=?, refs=? WHERE id=?", (body, json.dumps(verses), json.dumps(refs), eid))
+    r.db.execute("UPDATE debates SET last_activity=? WHERE id=?", (db.now(), did))
+    return {"id": eid}
+
+@route("DELETE", "/api/debates/<id>/entries/<eid>")
+def delete_entry(r):
+    did, eid = _own_entry(r)
+    r.db.execute("DELETE FROM debate_entries WHERE id=?", (eid,))
+
 @route("POST", "/api/debates/<id>/entries")
 def debate_entry(r):
     u = r.need_user(); did = int(r.params["id"]) if r.params["id"].isdigit() else 0
@@ -530,12 +574,7 @@ def debate_entry(r):
         raise HTTPError(409, "That side already has an opening argument. Add a rebuttal or counterargument instead.")
     if kind == "rebuttal" and not r.db.execute("SELECT 1 FROM debate_entries WHERE debate_id=? AND side<>? AND kind='opening'", (did, side)).fetchone():
         raise HTTPError(409, "A rebuttal answers an opening argument from the other side, and there isn't one yet.")
-    verses = []
-    for s in (r.body.get("verses") or [])[:8]:
-        p = bible.parse_reference(str(s))
-        if p and p[2]: verses.append([p[0], p[1], p[2], p[3]])
-        else: raise HTTPError(400, f"Could not read the Bible reference '{str(s)[:40]}'. Use a form like John 3:16 or Romans 8:28-30.")
-    refs = [str(s).strip()[:300] for s in (r.body.get("refs") or [])[:8] if str(s).strip()]
+    verses, refs = _entry_extras(r)
     t = db.now()
     r.db.execute("INSERT INTO debate_entries(debate_id,side,kind,author_id,body,verses,refs,created_at) VALUES(?,?,?,?,?,?,?,?)", (did, side, kind, u["id"], body, json.dumps(verses), json.dumps(refs), t))
     r.db.execute("UPDATE debates SET last_activity=? WHERE id=?", (t, did))

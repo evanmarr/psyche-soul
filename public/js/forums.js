@@ -131,8 +131,22 @@ page("/d/:id", async ({ id }) => {
     <div class="rich body-text">${rich(d.body)}</div>
     ${d.tags.length ? html`<div class="tags">${d.tags.map(t => html`<a class="tag" href="#/forums?tag=${t}">#${t}</a>`)}</div>` : ""}
     <div class="actions">${rxBar("discussion", d.id, d.reactions, d.mine)}${bmBtn("discussion", d.id, d.bookmarked)}
-      ${mine ? html`<button class="btn ghost dangerlink" data-act="del-disc" data-id="${d.id}">${icon("trash")} Delete</button>` : ""}</div>
+      ${mine ? html`<button class="btn ghost" data-act="edit-disc">${icon("pencil")} Edit</button><button class="btn ghost dangerlink" data-act="del-disc" data-id="${d.id}">${icon("trash")} Delete</button>` : ""}</div>
     ${commentsSection("discussion", d.id, d.comments)}
-  </article>` };
+  </article>`, mount() { window._disc = d; } };
 });
+ACT["edit-disc"] = () => {
+  const d = window._disc; if (!d) return;
+  openModal(html`<div class="row between"><h2>Edit discussion</h2><button class="icon-btn" data-act="close-modal" aria-label="Close">${icon("x")}</button></div>
+  <form class="form" data-form="editdisc"><label>Title<input name="title" required minlength="5" maxlength="200" value="${d.title}"></label>
+    <div class="grid2"><label>Category<select name="category">${S.cats.map(c => html`<option value="${c.slug}" ${c.slug === d.category ? "selected" : ""}>${c.name}</option>`)}</select></label>
+    <label>Kind of contribution<select name="label">${Object.entries(S.config.labels).map(([k, v]) => html`<option value="${k}" ${k === d.label ? "selected" : ""}>${v}</option>`)}</select></label></div>
+    <label>Tags<input name="tags" maxlength="80" value="${d.tags.join(", ")}" placeholder="up to 5, separated by commas"></label>
+    <label>Your post<textarea name="body" rows="10" required minlength="10" maxlength="10000">${d.body}</textarea></label>
+    <p class="form-err" id="ed-err"></p><div class="row end gap"><button type="button" class="btn" data-act="close-modal">Cancel</button><button class="btn primary">Save changes</button></div></form>`, { wide: true });
+};
+FORM.editdisc = async (f, data) => {
+  try { await api("/discussions/" + window._disc.id, { method: "PUT", body: data }); closeModal(); toast("Discussion updated", "ok"); rerender(); }
+  catch (e) { $("#ed-err").textContent = e.message; }
+};
 ACT["del-disc"] = async el => { if (await confirmBox("Delete discussion?", "This permanently removes the discussion and all of its comments.")) { await api("/discussions/" + el.dataset.id, { method: "DELETE" }); toast("Discussion deleted"); go("#/forums"); } };

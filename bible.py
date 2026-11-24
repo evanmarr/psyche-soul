@@ -1,63 +1,49 @@
-"""Bible text access.
+"""Bible text access. Both translations are bundled in data/ and are in the public domain, so no API key or outside service is needed.
 
-Translations
-  kjv  King James Version (public domain), bundled in data/kjv.json. Used for development.
-  esv  English Standard Version via the official ESV API (https://api.esv.org). Disabled until ESV_API_KEY is set.
-       The ESV text is never bundled or stored; it is fetched on demand and held only in a small in-memory cache.
+  web  World English Bible (modern English), data/web.json. The default.
+  kjv  King James Version, data/kjv.json.
 """
-import json, os, re, time, urllib.request, urllib.parse, threading
+import json, os, re
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-ESV_KEY = os.environ.get("ESV_API_KEY", "").strip()
-ESV_URL = os.environ.get("ESV_API_URL", "https://api.esv.org/v3/passage/text/")
+DEFAULT = "web"
+TRANSLATIONS = [{"id": "web", "name": "WEB", "full": "World English Bible (public domain)", "available": True},
+                {"id": "kjv", "name": "KJV", "full": "King James Version (public domain)", "available": True}]
 
-with open(os.path.join(ROOT, "data", "kjv.json"), encoding="utf-8-sig") as f:
-    _RAW = json.load(f)
+def _load(name):
+    with open(os.path.join(ROOT, "data", name + ".json"), encoding="utf-8-sig") as f:
+        d = json.load(f)
+    return [b["chapters"] for b in d], [b["name"] for b in d]
 
-BOOKS = [{"id": i, "name": b["name"], "slug": re.sub(r"[^a-z0-9]+", "-", b["name"].lower()).strip("-"),
-          "chapters": len(b["chapters"]), "testament": "OT" if i < 39 else "NT"} for i, b in enumerate(_RAW)]
+_TEXT, _NAMES = {}, None
+for _t in ("web", "kjv"):
+    _TEXT[_t], _n = _load(_t)
+    if _NAMES is None: _NAMES = _n
+
+BOOKS = [{"id": i, "name": n, "slug": re.sub(r"[^a-z0-9]+", "-", n.lower()).strip("-"),
+          "chapters": len(_TEXT["kjv"][i]), "testament": "OT" if i < 39 else "NT"} for i, n in enumerate(_NAMES)]
 BY_SLUG = {b["slug"]: b for b in BOOKS}
 _ABBR = {"gen": 0, "ex": 1, "exo": 1, "lev": 2, "num": 3, "deut": 4, "dt": 4, "josh": 5, "judg": 6, "ps": 18, "psa": 18, "psalm": 18, "prov": 19,
          "eccl": 20, "ecc": 20, "song": 21, "isa": 22, "jer": 23, "lam": 24, "ezek": 25, "dan": 26, "matt": 39, "mt": 39, "mk": 40, "lk": 41,
          "jn": 42, "rom": 44, "cor": 45, "gal": 47, "eph": 48, "phil": 49, "col": 50, "thess": 51, "tim": 53, "heb": 57, "jas": 58, "rev": 65}
 
+def norm_tr(tr):
+    return tr if tr in _TEXT else DEFAULT
+
 def book_by_slug(slug):
     return BY_SLUG.get(slug)
 
-def local_chapter(book_id, chapter):
-    chs = _RAW[book_id]["chapters"]
-    if not 1 <= chapter <= len(chs): return None
-    return [{"n": i + 1, "t": t} for i, t in enumerate(chs[chapter - 1])]
+def chapter(book_id, ch, tr=DEFAULT):
+    """Verses of one chapter: [{"n": 1, "t": "..."}]. Verses a translation omits (e.g. some WEB verses) are left out."""
+    chs = _TEXT[norm_tr(tr)][book_id]
+    if not 1 <= ch <= len(chs): return None
+    return [{"n": i + 1, "t": t} for i, t in enumerate(chs[ch - 1]) if t]
 
-_cache, _lock = {}, threading.Lock()
-
-def esv_chapter(book_id, chapter):
-    key = (book_id, chapter)
-    with _lock:
-        hit = _cache.get(key)
-        if hit and time.time() - hit[0] < 600: return hit[1]
-    q = urllib.parse.urlencode({"q": f"{BOOKS[book_id]['name']} {chapter}", "include-headings": "false", "include-footnotes": "false",
-        "include-verse-numbers": "true", "include-short-copyright": "false", "include-passage-references": "false", "include-first-verse-numbers": "true"})
-    req = urllib.request.Request(ESV_URL + "?" + q, headers={"Authorization": "Token " + ESV_KEY})
-    with urllib.request.urlopen(req, timeout=10) as r:
-        data = json.load(r)
-    text = " ".join(data.get("passages", []))
-    parts = re.split(r"\[(\d+)\]", text)
-    verses = [{"n": int(parts[i]), "t": re.sub(r"\s+", " ", parts[i + 1]).strip()} for i in range(1, len(parts) - 1, 2)]
-    with _lock:
-        if len(_cache) > 40: _cache.clear()
-        _cache[key] = (time.time(), verses)
-    return verses
-
-def chapter(book_id, ch, translation="kjv"):
-    if translation == "esv":
-        if not ESV_KEY: raise PermissionError("ESV is not configured on this server (set ESV_API_KEY).")
-        return esv_chapter(book_id, ch)
-    return local_chapter(book_id, ch)
-
-def verse_text(book_id, ch, v):
-    c = local_chapter(book_id, ch)
-    return c[v - 1]["t"] if c and 1 <= v <= len(c) else ""
+def verse_text(book_id, ch, v, tr=DEFAULT):
+    chs = _TEXT[norm_tr(tr)][book_id]
+    if not 1 <= ch <= len(chs): return ""
+    vs = chs[ch - 1]
+    return vs[v - 1] if 1 <= v <= len(vs) else ""
 
 def ref_label(book_id, ch, v=None, v_end=None):
     s = f"{BOOKS[book_id]['name']} {ch}"
@@ -97,18 +83,17 @@ def parse_reference(q):
     ve = int(m.group(4)) if m.group(4) else None
     return b, ch, v, ve
 
-_FLAT = None
-def _flat():
-    global _FLAT
-    if _FLAT is None:
-        _FLAT = [(bi, ci + 1, vi + 1, t, t.lower()) for bi, b in enumerate(_RAW) for ci, c in enumerate(b["chapters"]) for vi, t in enumerate(c)]
-    return _FLAT
+_FLAT = {}
+def _flat(tr):
+    if tr not in _FLAT:
+        _FLAT[tr] = [(bi, ci + 1, vi + 1, t, t.lower()) for bi, b in enumerate(_TEXT[tr]) for ci, c in enumerate(b) for vi, t in enumerate(c) if t]
+    return _FLAT[tr]
 
-def search(q, limit=40):
+def search(q, limit=40, tr=DEFAULT):
     terms = [t for t in re.findall(r"[a-z0-9']+", q.lower()) if t]
     if not terms: return [], 0
     out, total = [], 0
-    for bi, ch, v, t, tl in _flat():
+    for bi, ch, v, t, tl in _flat(norm_tr(tr)):
         if all(x in tl for x in terms):
             total += 1
             if len(out) < limit: out.append({"book": bi, "chapter": ch, "verse": v, "text": t, "ref": ref_label(bi, ch, v)})

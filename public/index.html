@@ -7,9 +7,11 @@
 <meta name="description" content="A platform for studying Scripture, pursuing wisdom through philosophy, and joining thoughtful theological and philosophical discussion.">
 <meta name="theme-color" content="#0d0a0c">
 <link rel="icon" type="image/png" href="/img/favicon.png">
+<script src="/js/theme.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/app.css">
+<link rel="stylesheet" href="/css/light.css">
 </head>
 <body>
 <header class="topbar" id="topbar">
@@ -20,6 +22,7 @@
     <span class="s-ico" data-icon="search"></span>
     <input id="q" name="q" type="search" placeholder="Search discussions, verses, topics..." autocomplete="off" aria-label="Search">
   </form>
+  <button class="icon-btn" data-act="display" aria-label="Theme and text size" aria-haspopup="true" title="Theme and text size"><span data-icon="type"></span></button>
   <button class="icon-btn bell" data-act="bell" aria-label="Notifications"><span data-icon="bell"></span><i class="dot" id="bell-dot" hidden></i></button>
   <div id="account"></div>
 </header>
@@ -36,6 +39,7 @@
 <script src="/js/forums.js"></script>
 <script src="/js/debates.js"></script>
 <script src="/js/library.js"></script>
+<script src="/js/study.js"></script>
 <script src="/js/community.js"></script>
 <script src="/js/home.js"></script>
 <script src="/js/main.js"></script>
